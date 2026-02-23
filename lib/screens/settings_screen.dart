@@ -28,9 +28,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Тохиргоо'),
-      ),
+      appBar: AppBar(title: const Text('Тохиргоо')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -89,19 +87,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildInfoTile(
                   Icons.receipt_long_rounded,
                   'Нийт гүйлгээ',
-                  Provider.of<TransactionProvider>(context)
-                      .transactions
-                      .length
-                      .toString(),
+                  Provider.of<TransactionProvider>(
+                    context,
+                  ).transactions.length.toString(),
                 ),
                 const Divider(height: 1, indent: 16),
                 _buildInfoTile(
                   Icons.account_balance_rounded,
                   'Нийт данс',
-                  Provider.of<AccountProvider>(context)
-                      .accounts
-                      .length
-                      .toString(),
+                  Provider.of<AccountProvider>(
+                    context,
+                  ).accounts.length.toString(),
                 ),
               ],
             ),
@@ -109,7 +105,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 24),
           Card(
             child: ListTile(
-              leading: const Icon(Icons.delete_forever_rounded, color: Colors.red),
+              leading: const Icon(
+                Icons.delete_forever_rounded,
+                color: Colors.red,
+              ),
               title: const Text('Бүх өгөгдөл устгах'),
               subtitle: const Text('Энэ үйлдлийг буцаах боломжгүй'),
               onTap: _showClearDataDialog,
@@ -134,7 +133,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildImportCard(String bank, String iconPath, Color color, VoidCallback onTap) {
+  Widget _buildImportCard(
+    String bank,
+    String iconPath,
+    Color color,
+    VoidCallback onTap,
+  ) {
     return Card(
       child: InkWell(
         onTap: onTap,
@@ -171,10 +175,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 4),
                     Text(
                       'CSV файл сонгох',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[400],
-                      ),
+                      style: TextStyle(fontSize: 14, color: Colors.grey[400]),
                     ),
                   ],
                 ),
@@ -209,7 +210,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildExportTile(String title, IconData icon, Color color, VoidCallback onTap) {
+  Widget _buildExportTile(
+    String title,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
     return ListTile(
       leading: Icon(icon, color: color),
       title: Text(title),
@@ -249,7 +255,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
         final file = File(result.files.single.path!);
         final content = await file.readAsString();
-        final List<List<dynamic>> csvData = const CsvToListConverter().convert(content);
+        final List<List<dynamic>> csvData = const CsvToListConverter().convert(
+          content,
+        );
 
         if (bankType == 'khan') {
           await _parseKhanBankCSV(csvData);
@@ -258,10 +266,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
         }
 
         // Refresh data
-        await Provider.of<TransactionProvider>(context, listen: false)
-            .loadTransactions();
-        await Provider.of<AccountProvider>(context, listen: false)
-            .loadAccounts();
+        await Provider.of<TransactionProvider>(
+          context,
+          listen: false,
+        ).loadTransactions();
+        await Provider.of<AccountProvider>(
+          context,
+          listen: false,
+        ).loadAccounts();
 
         if (mounted) {
           setState(() => _isImporting = false);
@@ -287,30 +299,54 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _parseKhanBankCSV(List<List<dynamic>> csvData) async {
-    // Skip header row
+    // Skip header row (index 0 is headers)
     for (int i = 1; i < csvData.length; i++) {
       final row = csvData[i];
       if (row.length < 7) continue;
 
       try {
         final date = DateFormat('yyyy-MM-dd HH:mm:ss').parse(row[0].toString());
-        final beginningBalance = double.tryParse(row[1].toString().replaceAll(',', '')) ?? 0;
-        final expense = double.tryParse(row[2].toString().replaceAll(',', '')) ?? 0;
-        final income = double.tryParse(row[3].toString().replaceAll(',', '')) ?? 0;
-        final endingBalance = double.tryParse(row[4].toString().replaceAll(',', '')) ?? 0;
+
+        // Get the account number from the header or use a default
+        // You might want to extract this from the CSV header or user input
+        final accountNumber =
+            'KHAN_5429445212'; // Using account number from your CSV
+
+        // Parse the values correctly
+        // Column 2 is Эхний үлдэгдэл (Beginning Balance)
+        // Column 3 is Дебит гүйлгээ (Expense/Debit)
+        // Column 4 is Кредит гүйлгээ (Income/Credit)
+        // Column 5 is Эцсийн үлдэгдэл (Ending Balance)
+
+        final beginningBalance =
+            double.tryParse(row[1].toString().replaceAll(',', '')) ?? 0;
+        final expense =
+            double.tryParse(row[2].toString().replaceAll(',', '')) ??
+            0; // Дебит гүйлгээ is expense
+        final income =
+            double.tryParse(row[3].toString().replaceAll(',', '')) ??
+            0; // Кредит гүйлгээ is income
+        final endingBalance =
+            double.tryParse(row[4].toString().replaceAll(',', '')) ?? 0;
         final description = row[5].toString();
-        final counterpartyAccount = row.length > 6 ? row[6].toString() : null;
-        
-        // Extract account number from the file name or provide default
-        final accountNumber = 'KHAN_${row[6].toString().substring(0, 4)}';
+
+        // Extract counterparty account if available (column 6)
+        String? counterpartyAccount;
+        if (row.length > 6 && row[6].toString().isNotEmpty) {
+          counterpartyAccount = row[6].toString();
+        }
 
         // Check if account exists, if not create it
-        final accountProvider = Provider.of<AccountProvider>(context, listen: false);
+        final accountProvider = Provider.of<AccountProvider>(
+          context,
+          listen: false,
+        );
         var account = accountProvider.getAccountByNumber(accountNumber);
         if (account == null) {
           account = Account(
             accountNumber: accountNumber,
             name: 'Хаан Банк',
+            description: 'Хаан банкны данс',
             color: Colors.primaries[Random().nextInt(Colors.primaries.length)],
             isDefined: false,
           );
@@ -320,8 +356,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final transaction = Transaction(
           date: date,
           beginningBalance: beginningBalance,
-          expense: expense,
-          income: income,
+          expense: expense, // Дебит гүйлгээ
+          income: income, // Кредит гүйлгээ
           endingBalance: endingBalance,
           description: description,
           counterpartyAccount: counterpartyAccount,
@@ -363,7 +399,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final accountNumber = 'GOLOMT_1805176793';
 
         // Check if account exists, if not create it
-        final accountProvider = Provider.of<AccountProvider>(context, listen: false);
+        final accountProvider = Provider.of<AccountProvider>(
+          context,
+          listen: false,
+        );
         var account = accountProvider.getAccountByNumber(accountNumber);
         if (account == null) {
           account = Account(
@@ -396,10 +435,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _exportCSV(String bankType) async {
     try {
-      final transactions = Provider.of<TransactionProvider>(context, listen: false)
-          .transactions
-          .where((t) => t.bankType == bankType)
-          .toList();
+      final transactions = Provider.of<TransactionProvider>(
+        context,
+        listen: false,
+      ).transactions.where((t) => t.bankType == bankType).toList();
 
       if (transactions.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -414,7 +453,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
       List<List<dynamic>> rows = [];
 
       if (bankType == 'khan') {
-        rows.add(['Гүйлгээний огноо', 'Эхний үлдэгдэл', 'Зарлага', 'Орлого', 'Эцсийн үлдэгдэл', 'Гүйлгээний утга', 'Харьцсан данс']);
+        rows.add([
+          'Гүйлгээний огноо',
+          'Эхний үлдэгдэл',
+          'Зарлага',
+          'Орлого',
+          'Эцсийн үлдэгдэл',
+          'Гүйлгээний утга',
+          'Харьцсан данс',
+        ]);
         for (var t in transactions) {
           rows.add([
             DateFormat('yyyy-MM-dd HH:mm:ss').format(t.date),
@@ -427,7 +474,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ]);
         }
       } else {
-        rows.add(['Гүйлгээний огноо', 'Салбар', 'Эхний үлдэгдэл', 'Дебит гүйлгээ', 'Кредит гүйлгээ', 'Эцсийн үлдэгдэл', 'Гүйлгээний утга', 'Харьцсан данс']);
+        rows.add([
+          'Гүйлгээний огноо',
+          'Салбар',
+          'Эхний үлдэгдэл',
+          'Дебит гүйлгээ',
+          'Кредит гүйлгээ',
+          'Эцсийн үлдэгдэл',
+          'Гүйлгээний утга',
+          'Харьцсан данс',
+        ]);
         for (var t in transactions) {
           rows.add([
             DateFormat('yyyy-MM-dd HH:mm:ss').format(t.date),
@@ -443,17 +499,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
 
       String csv = const ListToCsvConverter().convert(rows);
-      
+
       // Save to temporary file and share
       final directory = await Directory.systemTemp;
-      final file = File('${directory.path}/bank_statement_${bankType}_${DateTime.now().millisecondsSinceEpoch}.csv');
+      final file = File(
+        '${directory.path}/bank_statement_${bankType}_${DateTime.now().millisecondsSinceEpoch}.csv',
+      );
       await file.writeAsString(csv);
 
-      await Share.shareXFiles(
-        [XFile(file.path)],
-        text: 'Банкны хуулга',
-      );
-
+      await Share.shareXFiles([XFile(file.path)], text: 'Банкны хуулга');
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -484,13 +538,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
               await db.delete('transactions');
               await db.delete('accounts');
               await db.delete('categories');
-              
+
               // Refresh providers
-              await Provider.of<TransactionProvider>(context, listen: false)
-                  .loadTransactions();
-              await Provider.of<AccountProvider>(context, listen: false)
-                  .loadAccounts();
-              
+              await Provider.of<TransactionProvider>(
+                context,
+                listen: false,
+              ).loadTransactions();
+              await Provider.of<AccountProvider>(
+                context,
+                listen: false,
+              ).loadAccounts();
+
               if (context.mounted) {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -501,9 +559,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 );
               }
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text('Устгах'),
           ),
         ],
