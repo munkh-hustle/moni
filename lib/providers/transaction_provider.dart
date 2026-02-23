@@ -8,7 +8,8 @@ class TransactionProvider extends ChangeNotifier {
   List<Transaction> get transactions => _transactions;
 
   Map<String, List<Transaction>> _groupedByCounterparty = {};
-  Map<String, List<Transaction>> get groupedByCounterparty => _groupedByCounterparty;
+  Map<String, List<Transaction>> get groupedByCounterparty =>
+      _groupedByCounterparty;
 
   TransactionProvider() {
     loadTransactions();
@@ -22,24 +23,36 @@ class TransactionProvider extends ChangeNotifier {
 
   void _groupTransactionsByCounterparty() {
     _groupedByCounterparty = {};
-    
+
     for (var transaction in _transactions) {
-      // Use counterparty account if available, otherwise use description
-      String groupKey = transaction.counterpartyAccount?.isNotEmpty == true 
-          ? transaction.counterpartyAccount! 
-          : transaction.description;
-      
-      // Add some context to the key to differentiate between different types
+      // Clean the description first
+      final cleanedDescription = cleanDescription(transaction.description);
+
+      // Create a copy of the transaction with cleaned description for grouping
+      // But don't modify the original transaction
+      String groupKey;
+
+      if (transaction.counterpartyAccount?.isNotEmpty == true) {
+        // Use counterparty account if available
+        groupKey = transaction.counterpartyAccount!;
+      } else {
+        // Use cleaned description for grouping
+        groupKey = cleanedDescription.isNotEmpty
+            ? cleanedDescription
+            : transaction.description;
+      }
+
+      // Add context prefix for description-based groups
       if (transaction.counterpartyAccount?.isEmpty != false) {
         groupKey = '[Гүйлгээ] $groupKey';
       }
-      
+
       if (!_groupedByCounterparty.containsKey(groupKey)) {
         _groupedByCounterparty[groupKey] = [];
       }
       _groupedByCounterparty[groupKey]!.add(transaction);
     }
-    
+
     // Sort transactions within each group by date (newest first)
     _groupedByCounterparty.forEach((key, transactions) {
       transactions.sort((a, b) => b.date.compareTo(a.date));
@@ -58,6 +71,42 @@ class TransactionProvider extends ChangeNotifier {
     }
     return groupKey;
   }
+
+  String cleanDescription(String description) {
+    if (description.isEmpty) return description;
+
+    // Pattern 1: TRF=... format
+    // Matches: TRF=002150052746-949628XXXXXX5711-UGUUJ CHIKHER BO
+    final trfPattern = RegExp(r'^TRF=[A-Z0-9]+-[A-Z0-9]+-');
+    if (trfPattern.hasMatch(description)) {
+      return description.replaceFirst(trfPattern, '');
+    }
+
+    // Pattern 2: qpay ... format
+    // Matches: qpay 524441280812199 Бэлэг-Өрнөх Дашгаадан 8000 TR
+    final qpayPattern = RegExp(r'^qpay\s+\d+\s+');
+    if (qpayPattern.hasMatch(description)) {
+      return description.replaceFirst(qpayPattern, '');
+    }
+
+    // Pattern 3: QPAY ... format (uppercase)
+    final qpayUppercasePattern = RegExp(r'^QPAY\s+[A-Z0-9]+\s+');
+    if (qpayUppercasePattern.hasMatch(description)) {
+      return description.replaceFirst(qpayUppercasePattern, '');
+    }
+
+    // Pattern 4: Numbers at the beginning followed by space (like "57508 ,90696009")
+    final numberPattern = RegExp(r'^\d+\s*,?\s*');
+    if (numberPattern.hasMatch(description)) {
+      return description.replaceFirst(numberPattern, '');
+    }
+
+    return description;
+  }
+
+  String getCleanDescription(String originalDescription) {
+  return cleanDescription(originalDescription);
+}
 
   Future<void> addTransaction(Transaction transaction) async {
     await DatabaseHelper.instance.insertTransaction(transaction);
@@ -86,21 +135,18 @@ class TransactionProvider extends ChangeNotifier {
     if (_transactions.isEmpty) return 0;
     return _transactions.first.endingBalance;
   }
-  
+
   // Get total for a specific group
   Map<String, double> getGroupTotals(String groupKey) {
     double totalExpense = 0;
     double totalIncome = 0;
-    
+
     final groupTransactions = _groupedByCounterparty[groupKey] ?? [];
     for (var t in groupTransactions) {
       totalExpense += t.expense;
       totalIncome += t.income;
     }
-    
-    return {
-      'expense': totalExpense,
-      'income': totalIncome,
-    };
+
+    return {'expense': totalExpense, 'income': totalIncome};
   }
 }

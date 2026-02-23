@@ -3,12 +3,19 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/transaction.dart';
 
+// Extension for string truncation
+extension StringExtension on String {
+  String truncate(int length) {
+    return this.length > length ? '${substring(0, length)}...' : this;
+  }
+}
+
 class TransactionCard extends StatelessWidget {
   final Transaction transaction;
   final bool showAccountInfo; // New parameter
 
   const TransactionCard({
-    super.key, 
+    super.key,
     required this.transaction,
     this.showAccountInfo = false, // Default to false
   });
@@ -38,12 +45,11 @@ class TransactionCard extends StatelessWidget {
         ),
       ),
       title: Text(
-        transaction.description.length > 30
-            ? '${transaction.description.substring(0, 30)}...'
-            : transaction.description,
-        style: const TextStyle(
-          fontWeight: FontWeight.w500,
-        ),
+        (transaction.cleanedDescription?.isNotEmpty == true
+                ? transaction.cleanedDescription!
+                : transaction.description)
+            .truncate(30),
+        style: const TextStyle(fontWeight: FontWeight.w500),
       ),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -51,20 +57,15 @@ class TransactionCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             formatDate.format(transaction.date),
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
           ),
-          if (transaction.counterpartyAccount != null && transaction.counterpartyAccount!.isNotEmpty)
+          if (transaction.counterpartyAccount != null &&
+              transaction.counterpartyAccount!.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 2),
               child: Text(
                 'Харьцсан: ${transaction.counterpartyAccount}',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.deepPurple[300],
-                ),
+                style: TextStyle(fontSize: 11, color: Colors.deepPurple[300]),
               ),
             ),
           if (showAccountInfo)
@@ -72,10 +73,7 @@ class TransactionCard extends StatelessWidget {
               padding: const EdgeInsets.only(top: 2),
               child: Text(
                 'Данс: ${transaction.accountNumber}',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.grey[500],
-                ),
+                style: TextStyle(fontSize: 11, color: Colors.grey[500]),
               ),
             ),
         ],
@@ -102,10 +100,7 @@ class TransactionCard extends StatelessWidget {
             ),
           Text(
             'Үлд: ${formatCurrency.format(transaction.endingBalance)}',
-            style: TextStyle(
-              fontSize: 10,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 10, color: Colors.grey[600]),
           ),
         ],
       ),

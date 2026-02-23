@@ -323,7 +323,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final endingBalance =
             double.tryParse(row[5].toString().replaceAll(',', '')) ??
             0; // Changed from row[4] to row[5]
-        final description = row[6].toString(); // Changed from row[5] to row[6]
+        final description = row[6].toString();
+        final cleanedDescription = Provider.of<TransactionProvider>(
+          context,
+          listen: false,
+        ).getCleanDescription(description);
 
         // Extract counterparty account if available
         String? counterpartyAccount;
@@ -356,6 +360,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           income: income,
           endingBalance: endingBalance,
           description: description,
+          cleanedDescription: cleanedDescription, // Add this
           counterpartyAccount: counterpartyAccount,
           accountNumber: accountNumber,
           bankType: 'khan',
@@ -390,6 +395,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final endingBalance = double.tryParse(row[4].toString()) ?? 0;
         final description = row[5].toString();
         final counterpartyAccount = row.length > 6 ? row[6].toString() : null;
+        final cleanedDescription = Provider.of<TransactionProvider>(
+          context,
+          listen: false,
+        ).getCleanDescription(description);
 
         // Extract account number from first row or provide default
         final accountNumber = 'GOLOMT_1805176793';
@@ -417,6 +426,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           income: income,
           endingBalance: endingBalance,
           description: description,
+          cleanedDescription: cleanedDescription, // Add this
           counterpartyAccount: counterpartyAccount,
           accountNumber: accountNumber,
           bankType: 'golomt',

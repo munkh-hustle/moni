@@ -7,6 +7,7 @@ class Transaction {
   double income;
   double endingBalance;
   String description;
+  String? cleanedDescription; // Add this field
   String? counterpartyAccount;
   String accountNumber;
   String bankType;
@@ -21,6 +22,7 @@ class Transaction {
     required this.income,
     required this.endingBalance,
     required this.description,
+    this.cleanedDescription, // Add this
     this.counterpartyAccount,
     required this.accountNumber,
     required this.bankType,
@@ -37,6 +39,7 @@ class Transaction {
       'income': income,
       'endingBalance': endingBalance,
       'description': description,
+      'cleanedDescription': cleanedDescription, // Add this
       'counterpartyAccount': counterpartyAccount,
       'accountNumber': accountNumber,
       'bankType': bankType,
@@ -54,6 +57,7 @@ class Transaction {
       income: map['income'],
       endingBalance: map['endingBalance'],
       description: map['description'],
+      cleanedDescription: map['cleanedDescription'], // Add this
       counterpartyAccount: map['counterpartyAccount'],
       accountNumber: map['accountNumber'],
       bankType: map['bankType'],

@@ -22,11 +22,23 @@ class DatabaseHelper {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
 
+    // CHANGE: Increment version to 2
     return await openDatabase(
       path,
-      version: 1,
+      version: 2, // Changed from 1 to 2
       onCreate: _createDB,
+      onUpgrade: _upgradeDB, // Add this line
     );
+  }
+
+  // Add this method for handling database upgrades
+  Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // Add cleanedDescription column to transactions table
+      await db.execute(
+        'ALTER TABLE transactions ADD COLUMN cleanedDescription TEXT',
+      );
+    }
   }
 
   Future<void> _createDB(Database db, int version) async {
@@ -39,6 +51,7 @@ class DatabaseHelper {
         income REAL NOT NULL,
         endingBalance REAL NOT NULL,
         description TEXT NOT NULL,
+        cleanedDescription TEXT,  // Keep this line
         counterpartyAccount TEXT,
         accountNumber TEXT NOT NULL,
         bankType TEXT NOT NULL,
@@ -47,6 +60,7 @@ class DatabaseHelper {
       )
     ''');
 
+    // Rest of your tables remain the same...
     await db.execute('''
       CREATE TABLE accounts(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -68,12 +82,30 @@ class DatabaseHelper {
     ''');
 
     // Insert default categories
-    await db.insert('categories', Category(name: 'Хоол', color: Color(0xFFFF6B6B), budget: 0).toMap());
-    await db.insert('categories', Category(name: 'Тээвэр', color: Color(0xFF4ECDC4), budget: 0).toMap());
-    await db.insert('categories', Category(name: 'Зугаа', color: Color(0xFFFFD93D), budget: 0).toMap());
-    await db.insert('categories', Category(name: 'Дэлгүүр', color: Color(0xFF6BCB77), budget: 0).toMap());
-    await db.insert('categories', Category(name: 'Эрүүл мэнд', color: Color(0xFF9D65C9), budget: 0).toMap());
-    await db.insert('categories', Category(name: 'Боловсрол', color: Color(0xFF5D9B9B), budget: 0).toMap());
+    await db.insert(
+      'categories',
+      Category(name: 'Хоол', color: Color(0xFFFF6B6B), budget: 0).toMap(),
+    );
+    await db.insert(
+      'categories',
+      Category(name: 'Тээвэр', color: Color(0xFF4ECDC4), budget: 0).toMap(),
+    );
+    await db.insert(
+      'categories',
+      Category(name: 'Зугаа', color: Color(0xFFFFD93D), budget: 0).toMap(),
+    );
+    await db.insert(
+      'categories',
+      Category(name: 'Дэлгүүр', color: Color(0xFF6BCB77), budget: 0).toMap(),
+    );
+    await db.insert(
+      'categories',
+      Category(name: 'Эрүүл мэнд', color: Color(0xFF9D65C9), budget: 0).toMap(),
+    );
+    await db.insert(
+      'categories',
+      Category(name: 'Боловсрол', color: Color(0xFF5D9B9B), budget: 0).toMap(),
+    );
   }
 
   // Transaction methods
@@ -88,7 +120,9 @@ class DatabaseHelper {
     return result.map((map) => Transaction.fromMap(map)).toList();
   }
 
-  Future<List<Transaction>> getTransactionsByAccount(String accountNumber) async {
+  Future<List<Transaction>> getTransactionsByAccount(
+    String accountNumber,
+  ) async {
     final db = await instance.database;
     final result = await db.query(
       'transactions',
