@@ -33,7 +33,7 @@ class HomeScreen extends StatelessWidget {
       ),
       body: Consumer2<TransactionProvider, AccountProvider>(
         builder: (context, transactionProvider, accountProvider, child) {
-          if (transactionProvider.groupedByAccount.isEmpty) {
+          if (transactionProvider.groupedByCounterparty.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -66,36 +66,38 @@ class HomeScreen extends StatelessWidget {
 
           return ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: transactionProvider.groupedByAccount.length,
+            itemCount: transactionProvider.groupedByCounterparty.length,
             itemBuilder: (context, index) {
-              final accountNumber = transactionProvider.groupedByAccount.keys
+              final groupKey = transactionProvider.groupedByCounterparty.keys
                   .elementAt(index);
-              final accountTransactions = 
-                  transactionProvider.groupedByAccount[accountNumber]!;
-              final account = accountProvider.getAccountByNumber(accountNumber);
+              final groupTransactions = 
+                  transactionProvider.groupedByCounterparty[groupKey]!;
+              
+              final isCounterparty = transactionProvider.isCounterpartyGroup(groupKey);
+              final cleanName = transactionProvider.getCleanGroupName(groupKey);
+              
+              // Get the first transaction to find account info if needed
+              final firstTransaction = groupTransactions.first;
+              final account = accountProvider.getAccountByNumber(firstTransaction.accountNumber);
 
-              // Calculate account summary
-              double totalExpense = 0;
-              double totalIncome = 0;
-              for (var t in accountTransactions) {
-                totalExpense += t.expense;
-                totalIncome += t.income;
-              }
+              // Calculate group summary
+              final totals = transactionProvider.getGroupTotals(groupKey);
+              final totalExpense = totals['expense']!;
+              final totalIncome = totals['income']!;
 
               return Container(
                 margin: const EdgeInsets.only(bottom: 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Account Header
+                    // Group Header
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [
-                            account?.color ?? Colors.deepPurple,
-                            (account?.color ?? Colors.deepPurple).withOpacity(0.7),
-                          ],
+                          colors: isCounterparty
+                              ? [Colors.deepPurple, Colors.purple]
+                              : [Colors.blueGrey, Colors.grey],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
@@ -104,25 +106,43 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ),
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              isCounterparty
+                                  ? Icons.account_balance_rounded
+                                  : Icons.receipt_rounded,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  account?.name ?? 'Тодорхойгүй данс',
+                                  cleanName,
                                   style: const TextStyle(
-                                    fontSize: 18,
+                                    fontSize: 16,
                                     fontWeight: FontWeight.bold,
                                     color: Colors.white,
                                   ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  accountNumber,
+                                  isCounterparty
+                                      ? 'Харьцсан данс'
+                                      : 'Гүйлгээний утга',
                                   style: TextStyle(
-                                    fontSize: 14,
+                                    fontSize: 12,
                                     color: Colors.white.withOpacity(0.9),
                                   ),
                                 ),
@@ -132,18 +152,29 @@ class HomeScreen extends StatelessWidget {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Text(
-                                'Зарлага: ${formatCurrency.format(totalExpense)}',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w500,
+                              if (totalExpense > 0)
+                                Text(
+                                  'Зарлага: ${formatCurrency.format(totalExpense)}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 12,
+                                  ),
                                 ),
-                              ),
+                              if (totalIncome > 0)
+                                Text(
+                                  'Орлого: ${formatCurrency.format(totalIncome)}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 12,
+                                  ),
+                                ),
                               Text(
-                                'Орлого: ${formatCurrency.format(totalIncome)}',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w500,
+                                '${groupTransactions.length} гүйлгээ',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.white.withOpacity(0.8),
                                 ),
                               ),
                             ],
@@ -162,20 +193,23 @@ class HomeScreen extends StatelessWidget {
                       child: ListView.separated(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        itemCount: accountTransactions.length > 3 
-                            ? 3 : accountTransactions.length,
+                        itemCount: groupTransactions.length > 3 
+                            ? 3 : groupTransactions.length,
                         separatorBuilder: (context, index) => const Divider(
                           height: 1,
                           indent: 16,
                           endIndent: 16,
                         ),
                         itemBuilder: (context, transactionIndex) {
-                          final transaction = accountTransactions[transactionIndex];
-                          return TransactionCard(transaction: transaction);
+                          final transaction = groupTransactions[transactionIndex];
+                          return TransactionCard(
+                            transaction: transaction,
+                            showAccountInfo: true, // We'll add this parameter
+                          );
                         },
                       ),
                     ),
-                    if (accountTransactions.length > 3)
+                    if (groupTransactions.length > 3)
                       Container(
                         decoration: BoxDecoration(
                           color: Theme.of(context).cardTheme.color,
@@ -187,13 +221,15 @@ class HomeScreen extends StatelessWidget {
                           onPressed: () {
                             _showAllTransactions(
                               context, 
-                              accountNumber, 
-                              accountTransactions,
+                              groupKey,
+                              cleanName,
+                              groupTransactions,
+                              isCounterparty,
                               account,
                             );
                           },
                           child: Text(
-                            'Бүгдийг харах (${accountTransactions.length})',
+                            'Бүгдийг харах (${groupTransactions.length})',
                             style: const TextStyle(color: Colors.deepPurple),
                           ),
                         ),
@@ -210,8 +246,10 @@ class HomeScreen extends StatelessWidget {
 
   void _showAllTransactions(
     BuildContext context,
-    String accountNumber,
+    String groupKey,
+    String cleanName,
     List<Transaction> transactions,
+    bool isCounterparty,
     Account? account,
   ) {
     showModalBottomSheet(
@@ -229,7 +267,13 @@ class HomeScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: account?.color ?? Colors.deepPurple,
+                gradient: LinearGradient(
+                  colors: isCounterparty
+                      ? [Colors.deepPurple, Colors.purple]
+                      : [Colors.blueGrey, Colors.grey],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(20),
                 ),
@@ -246,15 +290,19 @@ class HomeScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          account?.name ?? 'Тодорхойгүй данс',
+                          cleanName,
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                           ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         Text(
-                          accountNumber,
+                          isCounterparty
+                              ? 'Харьцсан данс'
+                              : 'Гүйлгээний утга',
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.white.withOpacity(0.9),
@@ -274,7 +322,10 @@ class HomeScreen extends StatelessWidget {
                   final transaction = transactions[index];
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 8),
-                    child: TransactionCard(transaction: transaction),
+                    child: TransactionCard(
+                      transaction: transaction,
+                      showAccountInfo: true,
+                    ),
                   );
                 },
               ),

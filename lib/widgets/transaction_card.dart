@@ -5,8 +5,13 @@ import '../models/transaction.dart';
 
 class TransactionCard extends StatelessWidget {
   final Transaction transaction;
+  final bool showAccountInfo; // New parameter
 
-  const TransactionCard({super.key, required this.transaction});
+  const TransactionCard({
+    super.key, 
+    required this.transaction,
+    this.showAccountInfo = false, // Default to false
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -51,12 +56,26 @@ class TransactionCard extends StatelessWidget {
               color: Colors.grey[600],
             ),
           ),
-          if (transaction.counterpartyAccount != null)
-            Text(
-              'Данс: ${transaction.counterpartyAccount}',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
+          if (transaction.counterpartyAccount != null && transaction.counterpartyAccount!.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                'Харьцсан: ${transaction.counterpartyAccount}',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.deepPurple[300],
+                ),
+              ),
+            ),
+          if (showAccountInfo)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                'Данс: ${transaction.accountNumber}',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.grey[500],
+                ),
               ),
             ),
         ],
@@ -82,9 +101,9 @@ class TransactionCard extends StatelessWidget {
               ),
             ),
           Text(
-            formatCurrency.format(transaction.endingBalance),
+            'Үлд: ${formatCurrency.format(transaction.endingBalance)}',
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 10,
               color: Colors.grey[600],
             ),
           ),
