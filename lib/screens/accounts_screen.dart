@@ -47,10 +47,7 @@ class _AccountsScreenState extends State<AccountsScreen>
       ),
       body: TabBarView(
         controller: _tabController,
-        children: const [
-          UndefinedAccountsTab(),
-          CategoriesTab(),
-        ],
+        children: const [UndefinedAccountsTab(), CategoriesTab()],
       ),
     );
   }
@@ -76,10 +73,7 @@ class UndefinedAccountsTab extends StatelessWidget {
                 const SizedBox(height: 16),
                 Text(
                   'Бүх данс тодорхойлогдсон',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 18, color: Colors.grey[600]),
                 ),
               ],
             ),
@@ -105,7 +99,20 @@ class UndefinedAccountsTab extends StatelessWidget {
                   ),
                 ),
                 title: Text(account.name),
-                subtitle: Text(account.accountNumber),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(account.accountNumber),
+                    if (account.category != null)
+                      Text(
+                        'Категори: ${account.category}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.deepPurple[300],
+                        ),
+                      ),
+                  ],
+                ),
                 trailing: ElevatedButton(
                   onPressed: () => _showDefineAccountDialog(context, account),
                   style: ElevatedButton.styleFrom(
@@ -124,54 +131,122 @@ class UndefinedAccountsTab extends StatelessWidget {
   void _showDefineAccountDialog(BuildContext context, Account account) {
     final nameController = TextEditingController(text: account.name);
     Color selectedColor = account.color;
+    String? selectedCategory = account.category;
+
+    // Get categories from provider
+    final categoryProvider = Provider.of<AccountProvider>(
+      context,
+      listen: false,
+    );
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Данс тодорхойлох'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Дансны нэр',
-                  hintText: 'Жишээ: Цалингийн данс',
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Данс тодорхойлох'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Дансны нэр',
+                    hintText: 'Жишээ: Цалингийн данс',
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              const Text('Өнгө сонгох'),
-              const SizedBox(height: 8),
-              ColorPicker(
-                pickerColor: selectedColor,
-                onColorChanged: (color) => selectedColor = color,
-                showLabel: false,
-                pickerAreaHeightPercent: 0.8,
-              ),
-            ],
+                const SizedBox(height: 16),
+                const Text(
+                  'Категори сонгох',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                // Category dropdown
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade700),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: selectedCategory,
+                      hint: const Text('Категори сонгох'),
+                      isExpanded: true,
+                      items: [
+                        const DropdownMenuItem(
+                          value: null,
+                          child: Text('Категоригүй'),
+                        ),
+                        ...categoryProvider.categories.map((category) {
+                          return DropdownMenuItem(
+                            value: category.name,
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 16,
+                                  height: 16,
+                                  decoration: BoxDecoration(
+                                    color: category.color,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(category.name),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          selectedCategory = value;
+                        });
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Өнгө сонгох',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                ColorPicker(
+                  pickerColor: selectedColor,
+                  onColorChanged: (color) =>
+                      setState(() => selectedColor = color),
+                  showLabel: false,
+                  pickerAreaHeightPercent: 0.8,
+                ),
+              ],
+            ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Цуцлах'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final updatedAccount = Account(
+                  accountNumber: account.accountNumber,
+                  name: nameController.text,
+                  color: selectedColor,
+                  isDefined: true,
+                  category: selectedCategory, // Save the selected category
+                );
+                await Provider.of<AccountProvider>(
+                  context,
+                  listen: false,
+                ).updateAccount(updatedAccount);
+                if (context.mounted) Navigator.pop(context);
+              },
+              child: const Text('Хадгалах'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Цуцлах'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final updatedAccount = Account(
-                accountNumber: account.accountNumber,
-                name: nameController.text,
-                color: selectedColor,
-                isDefined: true,
-              );
-              await Provider.of<AccountProvider>(context, listen: false)
-                  .updateAccount(updatedAccount);
-              if (context.mounted) Navigator.pop(context);
-            },
-            child: const Text('Хадгалах'),
-          ),
-        ],
       ),
     );
   }
@@ -222,18 +297,15 @@ class CategoriesTab extends StatelessWidget {
                         children: [
                           IconButton(
                             icon: const Icon(Icons.edit_rounded),
-                            onPressed: () => _showEditCategoryDialog(
-                              context,
-                              category,
-                            ),
+                            onPressed: () =>
+                                _showEditCategoryDialog(context, category),
                           ),
-                          if (index > 5) // Don't allow deleting default categories
+                          if (index >
+                              5) // Don't allow deleting default categories
                             IconButton(
                               icon: const Icon(Icons.delete_rounded),
-                              onPressed: () => _showDeleteCategoryDialog(
-                                context,
-                                category,
-                              ),
+                              onPressed: () =>
+                                  _showDeleteCategoryDialog(context, category),
                             ),
                         ],
                       ),
@@ -251,7 +323,8 @@ class CategoriesTab extends StatelessWidget {
   void _showAddCategoryDialog(BuildContext context) {
     final nameController = TextEditingController();
     final budgetController = TextEditingController();
-    Color selectedColor = Colors.primaries[Random().nextInt(Colors.primaries.length)];
+    Color selectedColor =
+        Colors.primaries[Random().nextInt(Colors.primaries.length)];
 
     showDialog(
       context: context,
@@ -263,16 +336,12 @@ class CategoriesTab extends StatelessWidget {
             children: [
               TextField(
                 controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Категорийн нэр',
-                ),
+                decoration: const InputDecoration(labelText: 'Категорийн нэр'),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: budgetController,
-                decoration: const InputDecoration(
-                  labelText: 'Төсөв (₮)',
-                ),
+                decoration: const InputDecoration(labelText: 'Төсөв (₮)'),
                 keyboardType: TextInputType.number,
               ),
               const SizedBox(height: 16),
@@ -300,8 +369,10 @@ class CategoriesTab extends StatelessWidget {
                   color: selectedColor,
                   budget: double.tryParse(budgetController.text) ?? 0,
                 );
-                await Provider.of<AccountProvider>(context, listen: false)
-                    .addCategory(category);
+                await Provider.of<AccountProvider>(
+                  context,
+                  listen: false,
+                ).addCategory(category);
                 if (context.mounted) Navigator.pop(context);
               }
             },
@@ -329,16 +400,12 @@ class CategoriesTab extends StatelessWidget {
             children: [
               TextField(
                 controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Категорийн нэр',
-                ),
+                decoration: const InputDecoration(labelText: 'Категорийн нэр'),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: budgetController,
-                decoration: const InputDecoration(
-                  labelText: 'Төсөв (₮)',
-                ),
+                decoration: const InputDecoration(labelText: 'Төсөв (₮)'),
                 keyboardType: TextInputType.number,
               ),
               const SizedBox(height: 16),
@@ -364,10 +431,13 @@ class CategoriesTab extends StatelessWidget {
                 id: category.id,
                 name: nameController.text,
                 color: selectedColor,
-                budget: double.tryParse(budgetController.text) ?? category.budget,
+                budget:
+                    double.tryParse(budgetController.text) ?? category.budget,
               );
-              await Provider.of<AccountProvider>(context, listen: false)
-                  .updateCategory(updatedCategory);
+              await Provider.of<AccountProvider>(
+                context,
+                listen: false,
+              ).updateCategory(updatedCategory);
               if (context.mounted) Navigator.pop(context);
             },
             child: const Text('Хадгалах'),
@@ -390,13 +460,13 @@ class CategoriesTab extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () async {
-              await Provider.of<AccountProvider>(context, listen: false)
-                  .deleteCategory(category.id!);
+              await Provider.of<AccountProvider>(
+                context,
+                listen: false,
+              ).deleteCategory(category.id!);
               if (context.mounted) Navigator.pop(context);
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text('Устгах'),
           ),
         ],

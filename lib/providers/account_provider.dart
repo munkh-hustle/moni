@@ -14,6 +14,10 @@ class AccountProvider extends ChangeNotifier {
   List<Category> _categories = [];
   List<Category> get categories => _categories;
 
+  List<Account> getAccountsByCategory(String categoryName) {
+    return _accounts.where((a) => a.category == categoryName).toList();
+  }
+
   AccountProvider() {
     loadAccounts();
     loadCategories();

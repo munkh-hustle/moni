@@ -22,12 +22,12 @@ class DatabaseHelper {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
 
-    // CHANGE: Increment version to 2
+    // Increment version to 3
     return await openDatabase(
       path,
-      version: 2, // Changed from 1 to 2
+      version: 3, // Changed from 2 to 3
       onCreate: _createDB,
-      onUpgrade: _upgradeDB, // Add this line
+      onUpgrade: _upgradeDB,
     );
   }
 
@@ -39,47 +39,55 @@ class DatabaseHelper {
         'ALTER TABLE transactions ADD COLUMN cleanedDescription TEXT',
       );
     }
+
+    // Add this for version 3
+    if (oldVersion < 3) {
+      // Add category column to accounts table
+      await db.execute('ALTER TABLE accounts ADD COLUMN category TEXT');
+    }
   }
 
   Future<void> _createDB(Database db, int version) async {
     await db.execute('''
-      CREATE TABLE transactions(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        date TEXT NOT NULL,
-        beginningBalance REAL NOT NULL,
-        expense REAL NOT NULL,
-        income REAL NOT NULL,
-        endingBalance REAL NOT NULL,
-        description TEXT NOT NULL,
-        cleanedDescription TEXT,  // Keep this line
-        counterpartyAccount TEXT,
-        accountNumber TEXT NOT NULL,
-        bankType TEXT NOT NULL,
-        category TEXT,
-        isDefined INTEGER DEFAULT 0
-      )
-    ''');
+    CREATE TABLE transactions(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      date TEXT NOT NULL,
+      beginningBalance REAL NOT NULL,
+      expense REAL NOT NULL,
+      income REAL NOT NULL,
+      endingBalance REAL NOT NULL,
+      description TEXT NOT NULL,
+      cleanedDescription TEXT,
+      counterpartyAccount TEXT,
+      accountNumber TEXT NOT NULL,
+      bankType TEXT NOT NULL,
+      category TEXT,
+      isDefined INTEGER DEFAULT 0
+    )
+  ''');
 
-    // Rest of your tables remain the same...
+    // Add category column to accounts table
     await db.execute('''
-      CREATE TABLE accounts(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        accountNumber TEXT UNIQUE NOT NULL,
-        name TEXT NOT NULL,
-        description TEXT,
-        color INTEGER NOT NULL,
-        isDefined INTEGER DEFAULT 0
-      )
-    ''');
+    CREATE TABLE accounts(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      accountNumber TEXT UNIQUE NOT NULL,
+      name TEXT NOT NULL,
+      description TEXT,
+      color INTEGER NOT NULL,
+      isDefined INTEGER DEFAULT 0,
+      category TEXT  // Add this line
+    )
+  ''');
 
+    // Rest of the tables remain the same...
     await db.execute('''
-      CREATE TABLE categories(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT UNIQUE NOT NULL,
-        color INTEGER NOT NULL,
-        budget REAL DEFAULT 0
-      )
-    ''');
+    CREATE TABLE categories(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT UNIQUE NOT NULL,
+      color INTEGER NOT NULL,
+      budget REAL DEFAULT 0
+    )
+  ''');
 
     // Insert default categories
     await db.insert(
@@ -175,9 +183,21 @@ class DatabaseHelper {
 
   Future<int> updateAccount(Account account) async {
     final db = await instance.database;
+
+    // Create a map without including the id field (it's auto-increment)
+    final Map<String, dynamic> updateMap = {
+      'accountNumber': account.accountNumber,
+      'name': account.name,
+      'description': account.description,
+      'color': account.color.value,
+      'isDefined': account.isDefined ? 1 : 0,
+      'category': account
+          .category,
+    };
+
     return await db.update(
       'accounts',
-      account.toMap(),
+      updateMap,
       where: 'accountNumber = ?',
       whereArgs: [account.accountNumber],
     );
