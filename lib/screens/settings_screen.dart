@@ -335,15 +335,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       try {
         final date = DateFormat('yyyy-MM-dd HH:mm:ss').parse(row[0].toString());
 
-        // Extract the ACTUAL account number from the row
-        String accountNumber;
-
-        if (row.length > 7 && row[7].toString().isNotEmpty) {
-          accountNumber = row[7].toString();
-        } else {
-          accountNumber = 'KHAN_UNKNOWN';
-        }
-
         // Parse the values
         final beginningBalance =
             double.tryParse(row[2].toString().replaceAll(',', '')) ?? 0;
@@ -362,8 +353,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
         // Extract counterparty account if available
         String? counterpartyAccount;
+        String accountNumber;
+
         if (row.length > 7 && row[7].toString().isNotEmpty) {
+          // If counterparty account exists, use it as the account number
           counterpartyAccount = row[7].toString();
+          accountNumber = counterpartyAccount;
+        } else {
+          // No counterparty account, extract from description
+          // Check for TRF pattern
+          final trfPattern = RegExp(r'^TRF=[A-Z0-9]+-[A-Z0-9]+-(.+)');
+          final trfMatch = trfPattern.firstMatch(description);
+
+          if (trfMatch != null) {
+            // Extract the part after TRF=...-...-
+            accountNumber = trfMatch.group(1)?.trim() ?? description;
+          } else {
+            // Use cleaned description as account number
+            accountNumber = cleanedDescription.isNotEmpty
+                ? cleanedDescription
+                : description;
+          }
+
+          // Clean up account number (remove any trailing special characters)
+          accountNumber = accountNumber
+              .replaceAll(RegExp(r'[^\w\s>]+$'), '')
+              .trim();
+
+          // If account number is too long, truncate it
+          if (accountNumber.length > 50) {
+            accountNumber = accountNumber.substring(0, 50);
+          }
         }
 
         // Create transaction object to check for duplicate
@@ -395,9 +415,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
         var account = accountProvider.getAccountByNumber(accountNumber);
         if (account == null) {
+          // Generate a readable name from the account number
+          String accountName;
+          if (counterpartyAccount != null) {
+            accountName = 'Хаан Банк - $counterpartyAccount';
+          } else {
+            // For description-based accounts, create a shorter name
+            final nameParts = accountNumber.split(RegExp(r'[>\s]+'));
+            if (nameParts.length > 1) {
+              accountName = 'Хаан - ${nameParts.take(2).join(' ')}';
+            } else {
+              accountName =
+                  'Хаан - ${accountNumber.substring(0, accountNumber.length > 15 ? 15 : accountNumber.length)}';
+            }
+          }
+
           account = Account(
             accountNumber: accountNumber,
-            name: 'Хаан Банк - $accountNumber',
+            name: accountName,
             description: 'Хаан банкны данс',
             color: Colors.primaries[Random().nextInt(Colors.primaries.length)],
             isDefined: false,
@@ -454,14 +489,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
         // Determine account number
         String accountNumber;
+        String? counterpartyAccount;
 
         if (accountNumberFromHeader != null) {
           accountNumber = accountNumberFromHeader;
         } else {
           if (row.length > 6 && row[6].toString().isNotEmpty) {
-            accountNumber = row[6].toString();
+            counterpartyAccount = row[6].toString();
+            accountNumber = counterpartyAccount;
           } else {
-            accountNumber = 'GOLOMT_UNKNOWN';
+            // Use description as account number if no counterparty
+            final description = row[5].toString();
+            accountNumber = description.isNotEmpty
+                ? description.substring(
+                    0,
+                    description.length > 50 ? 50 : description.length,
+                  )
+                : 'GOLOMT_UNKNOWN';
           }
         }
 
@@ -470,7 +514,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final income = double.tryParse(row[3].toString()) ?? 0;
         final endingBalance = double.tryParse(row[4].toString()) ?? 0;
         final description = row[5].toString();
-        final counterpartyAccount = row.length > 6 ? row[6].toString() : null;
+
+        if (counterpartyAccount == null && row.length > 6) {
+          counterpartyAccount = row[6].toString();
+        }
 
         final cleanedDescription = Provider.of<TransactionProvider>(
           context,
@@ -506,9 +553,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
         var account = accountProvider.getAccountByNumber(accountNumber);
         if (account == null) {
+          String accountName;
+          if (accountNumberFromHeader != null) {
+            accountName = 'Голомт Банк - $accountNumberFromHeader';
+          } else if (counterpartyAccount != null) {
+            accountName = 'Голомт - $counterpartyAccount';
+          } else {
+            // For description-based accounts, create a shorter name
+            final nameParts = accountNumber.split(RegExp(r'[>\s]+'));
+            if (nameParts.length > 1) {
+              accountName = 'Голомт - ${nameParts.take(2).join(' ')}';
+            } else {
+              accountName =
+                  'Голомт - ${accountNumber.substring(0, accountNumber.length > 15 ? 15 : accountNumber.length)}';
+            }
+          }
+
           account = Account(
             accountNumber: accountNumber,
-            name: 'Голомт Банк - $accountNumber',
+            name: accountName,
             color: Colors.primaries[Random().nextInt(Colors.primaries.length)],
             isDefined: false,
           );

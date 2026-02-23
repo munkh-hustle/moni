@@ -40,7 +40,7 @@ class _AccountsScreenState extends State<AccountsScreen>
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
-            Tab(text: 'Тодорхойгүй данс'),
+            Tab(text: 'Данс'),
             Tab(text: 'Категори'),
           ],
         ),
