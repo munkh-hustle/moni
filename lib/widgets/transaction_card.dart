@@ -12,12 +12,14 @@ extension StringExtension on String {
 
 class TransactionCard extends StatelessWidget {
   final Transaction transaction;
-  final bool showAccountInfo; // New parameter
+  final bool showAccountInfo;
+  final String? accountCategory; // Add this parameter
 
   const TransactionCard({
     super.key,
     required this.transaction,
-    this.showAccountInfo = false, // Default to false
+    this.showAccountInfo = false,
+    this.accountCategory, // Add this
   });
 
   @override
@@ -71,9 +73,33 @@ class TransactionCard extends StatelessWidget {
           if (showAccountInfo)
             Padding(
               padding: const EdgeInsets.only(top: 2),
-              child: Text(
-                'Данс: ${transaction.accountNumber}',
-                style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+              child: Row(
+                children: [
+                  Text(
+                    'Данс: ${transaction.accountNumber}',
+                    style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                  ),
+                  if (accountCategory != null) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.deepPurple.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        accountCategory!,
+                        style: TextStyle(
+                          fontSize: 9,
+                          color: Colors.deepPurple[300],
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
         ],

@@ -307,23 +307,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
       try {
         final date = DateFormat('yyyy-MM-dd HH:mm:ss').parse(row[0].toString());
 
-        // Get the account number from the header or use a default
-        final accountNumber = 'KHAN_5429445212';
+        // Extract the ACTUAL account number from the row
+        // In Khan Bank CSV, the account number might be in a specific column
+        // You need to check your actual CSV structure
+        String accountNumber;
 
-        // Parse the values correctly - FIXED COLUMN INDICES
+        // Try to get account number from the first column or another column
+        // This depends on your actual CSV format
+        if (row.length > 7 && row[7].toString().isNotEmpty) {
+          // If there's a counterparty account, this transaction might be from a different account
+          accountNumber = row[7]
+              .toString(); // Adjust this based on your CSV structure
+        } else {
+          // Use a default or extract from another column
+          // You might need to extract from the description or another field
+          accountNumber = 'KHAN_UNKNOWN';
+        }
+
+        // Parse the values
         final beginningBalance =
-            double.tryParse(row[2].toString().replaceAll(',', '')) ??
-            0; // Changed from row[1] to row[2]
+            double.tryParse(row[2].toString().replaceAll(',', '')) ?? 0;
         final expense =
-            double.tryParse(row[3].toString().replaceAll(',', '')) ??
-            0; // Changed from row[2] to row[3]
+            double.tryParse(row[3].toString().replaceAll(',', '')) ?? 0;
         final income =
-            double.tryParse(row[4].toString().replaceAll(',', '')) ??
-            0; // Changed from row[3] to row[4]
+            double.tryParse(row[4].toString().replaceAll(',', '')) ?? 0;
         final endingBalance =
-            double.tryParse(row[5].toString().replaceAll(',', '')) ??
-            0; // Changed from row[4] to row[5]
+            double.tryParse(row[5].toString().replaceAll(',', '')) ?? 0;
         final description = row[6].toString();
+
         final cleanedDescription = Provider.of<TransactionProvider>(
           context,
           listen: false,
@@ -332,7 +343,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         // Extract counterparty account if available
         String? counterpartyAccount;
         if (row.length > 7 && row[7].toString().isNotEmpty) {
-          // Changed from row[6] to row[7]
           counterpartyAccount = row[7].toString();
         }
 
@@ -341,11 +351,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
           context,
           listen: false,
         );
+
         var account = accountProvider.getAccountByNumber(accountNumber);
         if (account == null) {
           account = Account(
             accountNumber: accountNumber,
-            name: 'Хаан Банк',
+            name: 'Хаан Банк - $accountNumber', // Use account number in name
             description: 'Хаан банкны данс',
             color: Colors.primaries[Random().nextInt(Colors.primaries.length)],
             isDefined: false,
@@ -360,7 +371,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           income: income,
           endingBalance: endingBalance,
           description: description,
-          cleanedDescription: cleanedDescription, // Add this
+          cleanedDescription: cleanedDescription,
           counterpartyAccount: counterpartyAccount,
           accountNumber: accountNumber,
           bankType: 'khan',
@@ -376,10 +387,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _parseGolomtBankCSV(List<List<dynamic>> csvData) async {
     // Find the start of transaction data
     int startRow = 0;
+    String? accountNumberFromHeader;
+
     for (int i = 0; i < csvData.length; i++) {
-      if (csvData[i].isNotEmpty && csvData[i][0] == 'Гүйлгээний огноо') {
-        startRow = i + 1;
-        break;
+      if (csvData[i].isNotEmpty) {
+        // Try to extract account number from header
+        if (csvData[i][0].toString().contains('Данс')) {
+          // Extract account number from header like "Данс: 1805194799"
+          final headerText = csvData[i][0].toString();
+          final accountMatch = RegExp(r'Данс:\s*(\d+)').firstMatch(headerText);
+          if (accountMatch != null) {
+            accountNumberFromHeader = accountMatch.group(1);
+          }
+        }
+
+        if (csvData[i][0] == 'Гүйлгээний огноо') {
+          startRow = i + 1;
+          break;
+        }
       }
     }
 
@@ -389,30 +414,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       try {
         final date = DateFormat('yyyy-MM-dd HH:mm:ss').parse(row[0].toString());
+
+        // Determine account number
+        String accountNumber;
+
+        if (accountNumberFromHeader != null) {
+          accountNumber = accountNumberFromHeader;
+        } else {
+          // Try to extract from counterparty account or use a default
+          if (row.length > 6 && row[6].toString().isNotEmpty) {
+            accountNumber = row[6].toString();
+          } else {
+            accountNumber = 'GOLOMT_UNKNOWN';
+          }
+        }
+
         final beginningBalance = double.tryParse(row[1].toString()) ?? 0;
         final expense = double.tryParse(row[2].toString()) ?? 0;
         final income = double.tryParse(row[3].toString()) ?? 0;
         final endingBalance = double.tryParse(row[4].toString()) ?? 0;
         final description = row[5].toString();
         final counterpartyAccount = row.length > 6 ? row[6].toString() : null;
+
         final cleanedDescription = Provider.of<TransactionProvider>(
           context,
           listen: false,
         ).getCleanDescription(description);
-
-        // Extract account number from first row or provide default
-        final accountNumber = 'GOLOMT_1805176793';
 
         // Check if account exists, if not create it
         final accountProvider = Provider.of<AccountProvider>(
           context,
           listen: false,
         );
+
         var account = accountProvider.getAccountByNumber(accountNumber);
         if (account == null) {
           account = Account(
             accountNumber: accountNumber,
-            name: 'Голомт Банк',
+            name: 'Голомт Банк - $accountNumber',
             color: Colors.primaries[Random().nextInt(Colors.primaries.length)],
             isDefined: false,
           );
@@ -426,7 +465,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           income: income,
           endingBalance: endingBalance,
           description: description,
-          cleanedDescription: cleanedDescription, // Add this
+          cleanedDescription: cleanedDescription,
           counterpartyAccount: counterpartyAccount,
           accountNumber: accountNumber,
           bankType: 'golomt',

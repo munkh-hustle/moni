@@ -15,7 +15,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final formatCurrency = NumberFormat.currency(locale: 'mn_MN', symbol: '₮');
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Гүйлгээнүүд'),
@@ -23,10 +23,14 @@ class HomeScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
             onPressed: () {
-              Provider.of<TransactionProvider>(context, listen: false)
-                  .loadTransactions();
-              Provider.of<AccountProvider>(context, listen: false)
-                  .loadAccounts();
+              Provider.of<TransactionProvider>(
+                context,
+                listen: false,
+              ).loadTransactions();
+              Provider.of<AccountProvider>(
+                context,
+                listen: false,
+              ).loadAccounts();
             },
           ),
         ],
@@ -46,18 +50,12 @@ class HomeScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   Text(
                     'Гүйлгээ байхгүй байна',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 18, color: Colors.grey[600]),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'CSV файл импортлоно уу',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                   ),
                 ],
               ),
@@ -70,15 +68,19 @@ class HomeScreen extends StatelessWidget {
             itemBuilder: (context, index) {
               final groupKey = transactionProvider.groupedByCounterparty.keys
                   .elementAt(index);
-              final groupTransactions = 
+              final groupTransactions =
                   transactionProvider.groupedByCounterparty[groupKey]!;
-              
-              final isCounterparty = transactionProvider.isCounterpartyGroup(groupKey);
+
+              final isCounterparty = transactionProvider.isCounterpartyGroup(
+                groupKey,
+              );
               final cleanName = transactionProvider.getCleanGroupName(groupKey);
-              
+
               // Get the first transaction to find account info if needed
               final firstTransaction = groupTransactions.first;
-              final account = accountProvider.getAccountByNumber(firstTransaction.accountNumber);
+              final account = accountProvider.getAccountByNumber(
+                firstTransaction.accountNumber,
+              );
 
               // Calculate group summary
               final totals = transactionProvider.getGroupTotals(groupKey);
@@ -193,18 +195,23 @@ class HomeScreen extends StatelessWidget {
                       child: ListView.separated(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        itemCount: groupTransactions.length > 3 
-                            ? 3 : groupTransactions.length,
-                        separatorBuilder: (context, index) => const Divider(
-                          height: 1,
-                          indent: 16,
-                          endIndent: 16,
-                        ),
+                        itemCount: groupTransactions.length > 3
+                            ? 3
+                            : groupTransactions.length,
+                        separatorBuilder: (context, index) =>
+                            const Divider(height: 1, indent: 16, endIndent: 16),
                         itemBuilder: (context, transactionIndex) {
-                          final transaction = groupTransactions[transactionIndex];
+                          final transaction =
+                              groupTransactions[transactionIndex];
+                          final account = accountProvider.getAccountByNumber(
+                            transaction.accountNumber,
+                          );
+
                           return TransactionCard(
                             transaction: transaction,
-                            showAccountInfo: true, // We'll add this parameter
+                            showAccountInfo: true,
+                            accountCategory:
+                                account?.category, // Pass the category
                           );
                         },
                       ),
@@ -220,7 +227,7 @@ class HomeScreen extends StatelessWidget {
                         child: TextButton(
                           onPressed: () {
                             _showAllTransactions(
-                              context, 
+                              context,
                               groupKey,
                               cleanName,
                               groupTransactions,
@@ -300,9 +307,7 @@ class HomeScreen extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
-                          isCounterparty
-                              ? 'Харьцсан данс'
-                              : 'Гүйлгээний утга',
+                          isCounterparty ? 'Харьцсан данс' : 'Гүйлгээний утга',
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.white.withOpacity(0.9),
@@ -320,11 +325,17 @@ class HomeScreen extends StatelessWidget {
                 itemCount: transactions.length,
                 itemBuilder: (context, index) {
                   final transaction = transactions[index];
+                  final account = Provider.of<AccountProvider>(
+                    context,
+                    listen: false,
+                  ).getAccountByNumber(transaction.accountNumber);
+
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: TransactionCard(
                       transaction: transaction,
                       showAccountInfo: true,
+                      accountCategory: account?.category,
                     ),
                   );
                 },
