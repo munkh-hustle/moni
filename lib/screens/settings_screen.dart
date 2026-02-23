@@ -23,6 +23,22 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  bool _isDuplicateTransaction(
+    Transaction newTransaction,
+    List<Transaction> existingTransactions,
+  ) {
+    return existingTransactions.any(
+      (existing) =>
+          existing.date.isAtSameMomentAs(newTransaction.date) &&
+          existing.expense == newTransaction.expense &&
+          existing.income == newTransaction.income &&
+          existing.description == newTransaction.description &&
+          existing.accountNumber == newTransaction.accountNumber,
+    );
+  }
+
+  int _importedCount = 0;
+  int _skippedCount = 0;
   bool _isImporting = false;
 
   @override
@@ -277,10 +293,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
         if (mounted) {
           setState(() => _isImporting = false);
+
+          // Show detailed summary
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Амжилттай импортлов'),
-              backgroundColor: Colors.green,
+            SnackBar(
+              content: Text(
+                'Амжилттай импортлов: $_importedCount шинэ, $_skippedCount давхардсан',
+              ),
+              backgroundColor: _skippedCount > 0 ? Colors.orange : Colors.green,
+              duration: const Duration(seconds: 4),
             ),
           );
         }
@@ -299,6 +320,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _parseKhanBankCSV(List<List<dynamic>> csvData) async {
+    _importedCount = 0;
+    _skippedCount = 0;
+
+    // Get existing transactions to check for duplicates
+    final existingTransactions = await DatabaseHelper.instance
+        .getAllTransactions();
+
     // Skip header row (index 0 is headers)
     for (int i = 1; i < csvData.length; i++) {
       final row = csvData[i];
@@ -308,19 +336,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final date = DateFormat('yyyy-MM-dd HH:mm:ss').parse(row[0].toString());
 
         // Extract the ACTUAL account number from the row
-        // In Khan Bank CSV, the account number might be in a specific column
-        // You need to check your actual CSV structure
         String accountNumber;
 
-        // Try to get account number from the first column or another column
-        // This depends on your actual CSV format
         if (row.length > 7 && row[7].toString().isNotEmpty) {
-          // If there's a counterparty account, this transaction might be from a different account
-          accountNumber = row[7]
-              .toString(); // Adjust this based on your CSV structure
+          accountNumber = row[7].toString();
         } else {
-          // Use a default or extract from another column
-          // You might need to extract from the description or another field
           accountNumber = 'KHAN_UNKNOWN';
         }
 
@@ -346,24 +366,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           counterpartyAccount = row[7].toString();
         }
 
-        // Check if account exists, if not create it
-        final accountProvider = Provider.of<AccountProvider>(
-          context,
-          listen: false,
-        );
-
-        var account = accountProvider.getAccountByNumber(accountNumber);
-        if (account == null) {
-          account = Account(
-            accountNumber: accountNumber,
-            name: 'Хаан Банк - $accountNumber', // Use account number in name
-            description: 'Хаан банкны данс',
-            color: Colors.primaries[Random().nextInt(Colors.primaries.length)],
-            isDefined: false,
-          );
-          await accountProvider.addAccount(account);
-        }
-
+        // Create transaction object to check for duplicate
         final transaction = Transaction(
           date: date,
           beginningBalance: beginningBalance,
@@ -377,14 +380,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
           bankType: 'khan',
         );
 
+        // Check for duplicate
+        if (_isDuplicateTransaction(transaction, existingTransactions)) {
+          _skippedCount++;
+          print('Skipped duplicate transaction: $date - $description');
+          continue;
+        }
+
+        // Check if account exists, if not create it
+        final accountProvider = Provider.of<AccountProvider>(
+          context,
+          listen: false,
+        );
+
+        var account = accountProvider.getAccountByNumber(accountNumber);
+        if (account == null) {
+          account = Account(
+            accountNumber: accountNumber,
+            name: 'Хаан Банк - $accountNumber',
+            description: 'Хаан банкны данс',
+            color: Colors.primaries[Random().nextInt(Colors.primaries.length)],
+            isDefined: false,
+          );
+          await accountProvider.addAccount(account);
+        }
+
         await DatabaseHelper.instance.insertTransaction(transaction);
+        _importedCount++;
       } catch (e) {
         print('Error parsing row $i: $e');
       }
     }
+
+    print('Import complete: $_importedCount imported, $_skippedCount skipped');
   }
 
   Future<void> _parseGolomtBankCSV(List<List<dynamic>> csvData) async {
+    _importedCount = 0;
+    _skippedCount = 0;
+
+    // Get existing transactions to check for duplicates
+    final existingTransactions = await DatabaseHelper.instance
+        .getAllTransactions();
+
     // Find the start of transaction data
     int startRow = 0;
     String? accountNumberFromHeader;
@@ -393,7 +431,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (csvData[i].isNotEmpty) {
         // Try to extract account number from header
         if (csvData[i][0].toString().contains('Данс')) {
-          // Extract account number from header like "Данс: 1805194799"
           final headerText = csvData[i][0].toString();
           final accountMatch = RegExp(r'Данс:\s*(\d+)').firstMatch(headerText);
           if (accountMatch != null) {
@@ -421,7 +458,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         if (accountNumberFromHeader != null) {
           accountNumber = accountNumberFromHeader;
         } else {
-          // Try to extract from counterparty account or use a default
           if (row.length > 6 && row[6].toString().isNotEmpty) {
             accountNumber = row[6].toString();
           } else {
@@ -441,6 +477,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
           listen: false,
         ).getCleanDescription(description);
 
+        // Create transaction object to check for duplicate
+        final transaction = Transaction(
+          date: date,
+          beginningBalance: beginningBalance,
+          expense: expense,
+          income: income,
+          endingBalance: endingBalance,
+          description: description,
+          cleanedDescription: cleanedDescription,
+          counterpartyAccount: counterpartyAccount,
+          accountNumber: accountNumber,
+          bankType: 'golomt',
+        );
+
+        // Check for duplicate
+        if (_isDuplicateTransaction(transaction, existingTransactions)) {
+          _skippedCount++;
+          print('Skipped duplicate transaction: $date - $description');
+          continue;
+        }
+
         // Check if account exists, if not create it
         final accountProvider = Provider.of<AccountProvider>(
           context,
@@ -458,24 +515,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           await accountProvider.addAccount(account);
         }
 
-        final transaction = Transaction(
-          date: date,
-          beginningBalance: beginningBalance,
-          expense: expense,
-          income: income,
-          endingBalance: endingBalance,
-          description: description,
-          cleanedDescription: cleanedDescription,
-          counterpartyAccount: counterpartyAccount,
-          accountNumber: accountNumber,
-          bankType: 'golomt',
-        );
-
         await DatabaseHelper.instance.insertTransaction(transaction);
+        _importedCount++;
       } catch (e) {
         print('Error parsing row: $e');
       }
     }
+
+    print('Import complete: $_importedCount imported, $_skippedCount skipped');
   }
 
   Future<void> _exportCSV(String bankType) async {
