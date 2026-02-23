@@ -308,32 +308,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final date = DateFormat('yyyy-MM-dd HH:mm:ss').parse(row[0].toString());
 
         // Get the account number from the header or use a default
-        // You might want to extract this from the CSV header or user input
-        final accountNumber =
-            'KHAN_5429445212'; // Using account number from your CSV
+        final accountNumber = 'KHAN_5429445212';
 
-        // Parse the values correctly
-        // Column 2 is Эхний үлдэгдэл (Beginning Balance)
-        // Column 3 is Дебит гүйлгээ (Expense/Debit)
-        // Column 4 is Кредит гүйлгээ (Income/Credit)
-        // Column 5 is Эцсийн үлдэгдэл (Ending Balance)
-
+        // Parse the values correctly - FIXED COLUMN INDICES
         final beginningBalance =
-            double.tryParse(row[1].toString().replaceAll(',', '')) ?? 0;
-        final expense =
             double.tryParse(row[2].toString().replaceAll(',', '')) ??
-            0; // Дебит гүйлгээ is expense
-        final income =
+            0; // Changed from row[1] to row[2]
+        final expense =
             double.tryParse(row[3].toString().replaceAll(',', '')) ??
-            0; // Кредит гүйлгээ is income
+            0; // Changed from row[2] to row[3]
+        final income =
+            double.tryParse(row[4].toString().replaceAll(',', '')) ??
+            0; // Changed from row[3] to row[4]
         final endingBalance =
-            double.tryParse(row[4].toString().replaceAll(',', '')) ?? 0;
-        final description = row[5].toString();
+            double.tryParse(row[5].toString().replaceAll(',', '')) ??
+            0; // Changed from row[4] to row[5]
+        final description = row[6].toString(); // Changed from row[5] to row[6]
 
-        // Extract counterparty account if available (column 6)
+        // Extract counterparty account if available
         String? counterpartyAccount;
-        if (row.length > 6 && row[6].toString().isNotEmpty) {
-          counterpartyAccount = row[6].toString();
+        if (row.length > 7 && row[7].toString().isNotEmpty) {
+          // Changed from row[6] to row[7]
+          counterpartyAccount = row[7].toString();
         }
 
         // Check if account exists, if not create it
@@ -356,8 +352,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final transaction = Transaction(
           date: date,
           beginningBalance: beginningBalance,
-          expense: expense, // Дебит гүйлгээ
-          income: income, // Кредит гүйлгээ
+          expense: expense,
+          income: income,
           endingBalance: endingBalance,
           description: description,
           counterpartyAccount: counterpartyAccount,
@@ -367,7 +363,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
         await DatabaseHelper.instance.insertTransaction(transaction);
       } catch (e) {
-        print('Error parsing row: $e');
+        print('Error parsing row $i: $e');
       }
     }
   }
