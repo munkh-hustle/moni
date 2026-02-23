@@ -1,4 +1,5 @@
-// lib/screens/home_screen.dart
+// lib/screens/home_screen.dart - Updated version with only account cards
+
 import 'package:flutter/material.dart';
 import 'package:moni/models/account.dart';
 import 'package:moni/models/transaction.dart';
@@ -6,9 +7,8 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/transaction_provider.dart';
 import '../providers/account_provider.dart';
-import '../widgets/transaction_card.dart';
 import '../widgets/balance_card.dart';
-import '../widgets/account_category_card.dart'; // New import
+import '../widgets/account_category_card.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -19,7 +19,7 @@ class HomeScreen extends StatelessWidget {
     
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Гүйлгээнүүд'),
+        title: const Text('Санхүүгийн хяналт'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
@@ -34,19 +34,19 @@ class HomeScreen extends StatelessWidget {
       ),
       body: Consumer2<TransactionProvider, AccountProvider>(
         builder: (context, transactionProvider, accountProvider, child) {
-          if (transactionProvider.groupedByCounterparty.isEmpty) {
+          if (accountProvider.accounts.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    Icons.receipt_long_rounded,
+                    Icons.account_balance_rounded,
                     size: 80,
                     color: Colors.grey[700],
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Гүйлгээ байхгүй байна',
+                    'Данс байхгүй байна',
                     style: TextStyle(
                       fontSize: 18,
                       color: Colors.grey[600],
@@ -97,16 +97,16 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
               
-              // Account Category Cards
-              SliverToBoxAdapter(
+              // Account Category Cards Section
+              const SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: EdgeInsets.symmetric(horizontal: 16),
                   child: Text(
                     'ДАНСНУУД',
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Colors.grey[400],
+                      color: Colors.deepPurple,
                     ),
                   ),
                 ),
@@ -140,303 +140,9 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              
-              // Transactions by Counterparty Section
-              const SliverToBoxAdapter(child: SizedBox(height: 16)),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Text(
-                    'ГҮЙЛГЭЭНҮҮД',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey[400],
-                    ),
-                  ),
-                ),
-              ),
-              const SliverToBoxAdapter(child: SizedBox(height: 8)),
-              
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final groupKey = transactionProvider.groupedByCounterparty.keys
-                          .elementAt(index);
-                      final groupTransactions = 
-                          transactionProvider.groupedByCounterparty[groupKey]!;
-                      
-                      final isCounterparty = transactionProvider.isCounterpartyGroup(groupKey);
-                      final cleanName = transactionProvider.getCleanGroupName(groupKey);
-                      
-                      final firstTransaction = groupTransactions.first;
-                      final account = accountProvider.getAccountByNumber(firstTransaction.accountNumber);
-
-                      final totals = transactionProvider.getGroupTotals(groupKey);
-                      final totalExpense = totals['expense']!;
-                      final totalIncome = totals['income']!;
-
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Group Header
-                            Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: isCounterparty
-                                      ? [Colors.deepPurple, Colors.purple]
-                                      : [Colors.blueGrey, Colors.grey],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
-                                borderRadius: const BorderRadius.vertical(
-                                  top: Radius.circular(15),
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 40,
-                                    height: 40,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.2),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Icon(
-                                      isCounterparty
-                                          ? Icons.account_balance_rounded
-                                          : Icons.receipt_rounded,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          cleanName,
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.white,
-                                          ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          isCounterparty
-                                              ? 'Харьцсан данс'
-                                              : 'Гүйлгээний утга',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.white.withOpacity(0.9),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      if (totalExpense > 0)
-                                        Text(
-                                          'Зарлага: ${formatCurrency.format(totalExpense)}',
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                      if (totalIncome > 0)
-                                        Text(
-                                          'Орлого: ${formatCurrency.format(totalIncome)}',
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                      Text(
-                                        '${groupTransactions.length} гүйлгээ',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: Colors.white.withOpacity(0.8),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                            // Transactions List
-                            Container(
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).cardTheme.color,
-                                borderRadius: const BorderRadius.vertical(
-                                  bottom: Radius.circular(15),
-                                ),
-                              ),
-                              child: ListView.separated(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemCount: groupTransactions.length > 3 
-                                    ? 3 : groupTransactions.length,
-                                separatorBuilder: (context, index) => const Divider(
-                                  height: 1,
-                                  indent: 16,
-                                  endIndent: 16,
-                                ),
-                                itemBuilder: (context, transactionIndex) {
-                                  final transaction = groupTransactions[transactionIndex];
-                                  final account = accountProvider.getAccountByNumber(transaction.accountNumber);
-                                  
-                                  return TransactionCard(
-                                    transaction: transaction,
-                                    showAccountInfo: true,
-                                    accountCategory: account?.category,
-                                  );
-                                },
-                              ),
-                            ),
-                            if (groupTransactions.length > 3)
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).cardTheme.color,
-                                  borderRadius: const BorderRadius.vertical(
-                                    bottom: Radius.circular(15),
-                                  ),
-                                ),
-                                child: TextButton(
-                                  onPressed: () {
-                                    _showAllTransactions(
-                                      context, 
-                                      groupKey,
-                                      cleanName,
-                                      groupTransactions,
-                                      isCounterparty,
-                                      account,
-                                    );
-                                  },
-                                  child: Text(
-                                    'Бүгдийг харах (${groupTransactions.length})',
-                                    style: const TextStyle(color: Colors.deepPurple),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      );
-                    },
-                    childCount: transactionProvider.groupedByCounterparty.length,
-                  ),
-                ),
-              ),
             ],
           );
         },
-      ),
-    );
-  }
-
-  void _showAllTransactions(
-    BuildContext context,
-    String groupKey,
-    String cleanName,
-    List<Transaction> transactions,
-    bool isCounterparty,
-    Account? account,
-  ) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.8,
-        decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: isCounterparty
-                      ? [Colors.deepPurple, Colors.purple]
-                      : [Colors.blueGrey, Colors.grey],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(20),
-                ),
-              ),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          cleanName,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          isCounterparty
-                              ? 'Харьцсан данс'
-                              : 'Гүйлгээний утга',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.white.withOpacity(0.9),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: transactions.length,
-                itemBuilder: (context, index) {
-                  final transaction = transactions[index];
-                  final account = Provider.of<AccountProvider>(context, listen: false)
-                      .getAccountByNumber(transaction.accountNumber);
-                  
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: TransactionCard(
-                      transaction: transaction,
-                      showAccountInfo: true,
-                      accountCategory: account?.category,
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
