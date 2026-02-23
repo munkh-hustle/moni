@@ -1,5 +1,4 @@
-// lib/screens/home_screen.dart - Updated version with only account cards
-
+// lib/screens/home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:moni/models/account.dart';
 import 'package:moni/models/transaction.dart';
@@ -7,7 +6,6 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/transaction_provider.dart';
 import '../providers/account_provider.dart';
-import '../widgets/balance_card.dart';
 import '../widgets/account_category_card.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -85,33 +83,20 @@ class HomeScreen extends StatelessWidget {
 
           return CustomScrollView(
             slivers: [
-              // Overall Balance Card
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: BalanceCard(
-                    balance: transactionProvider.getCurrentBalance(),
-                    income: transactionProvider.getTotalIncome(),
-                    expense: transactionProvider.getTotalExpenses(),
-                  ),
-                ),
-              ),
-              
               // Account Category Cards Section
               const SliverToBoxAdapter(
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   child: Text(
                     'ДАНСНУУД',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: Colors.deepPurple,
                     ),
                   ),
                 ),
               ),
-              const SliverToBoxAdapter(child: SizedBox(height: 8)),
               
               SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),

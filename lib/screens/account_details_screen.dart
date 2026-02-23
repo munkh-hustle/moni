@@ -25,7 +25,7 @@ class AccountDetailsScreen extends StatelessWidget {
         slivers: [
           // Custom App Bar with account info
           SliverAppBar(
-            expandedHeight: 180,
+            expandedHeight: 150,
             floating: false,
             pinned: true,
             backgroundColor: account.color,
@@ -110,7 +110,7 @@ class AccountDetailsScreen extends StatelessWidget {
             ),
           ),
           
-          // Account Summary Card
+          // Account Summary Card (BALANCE REMOVED, only income/expense)
           SliverToBoxAdapter(
             child: Consumer<TransactionProvider>(
               builder: (context, transactionProvider, child) {
@@ -121,12 +121,10 @@ class AccountDetailsScreen extends StatelessWidget {
                 
                 double totalIncome = 0;
                 double totalExpense = 0;
-                double currentBalance = 0;
                 
                 if (accountTransactions.isNotEmpty) {
                   totalIncome = accountTransactions.fold(0, (sum, t) => sum + t.income);
                   totalExpense = accountTransactions.fold(0, (sum, t) => sum + t.expense);
-                  currentBalance = accountTransactions.first.endingBalance;
                 }
                 
                 return Padding(
@@ -151,105 +149,98 @@ class AccountDetailsScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
                       children: [
-                        const Text(
-                          'Одоогийн үлдэгдэл',
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          formatCurrency.format(currentBalance),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Row(
+                        // Income
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
                                 children: [
                                   Container(
-                                    padding: const EdgeInsets.all(8),
+                                    padding: const EdgeInsets.all(6),
                                     decoration: BoxDecoration(
                                       color: Colors.white.withOpacity(0.2),
                                       shape: BoxShape.circle,
                                     ),
                                     child: const Icon(
                                       Icons.arrow_downward_rounded,
-                                      color: Colors.green,
-                                      size: 16,
+                                      color: Colors.white,
+                                      size: 14,
                                     ),
                                   ),
                                   const SizedBox(width: 8),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text(
-                                        'Орлого',
-                                        style: TextStyle(
-                                          color: Colors.white70,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                      Text(
-                                        formatCurrency.format(totalIncome),
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
+                                  const Text(
+                                    'Орлого',
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 14,
+                                    ),
                                   ),
                                 ],
                               ),
-                            ),
-                            Expanded(
-                              child: Row(
+                              const SizedBox(height: 8),
+                              Text(
+                                formatCurrency.format(totalIncome),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        
+                        // Vertical divider
+                        Container(
+                          height: 50,
+                          width: 1,
+                          color: Colors.white.withOpacity(0.3),
+                          margin: const EdgeInsets.symmetric(horizontal: 16),
+                        ),
+                        
+                        // Expense
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
                                 children: [
                                   Container(
-                                    padding: const EdgeInsets.all(8),
+                                    padding: const EdgeInsets.all(6),
                                     decoration: BoxDecoration(
                                       color: Colors.white.withOpacity(0.2),
                                       shape: BoxShape.circle,
                                     ),
                                     child: const Icon(
                                       Icons.arrow_upward_rounded,
-                                      color: Colors.red,
-                                      size: 16,
+                                      color: Colors.white,
+                                      size: 14,
                                     ),
                                   ),
                                   const SizedBox(width: 8),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text(
-                                        'Зарлага',
-                                        style: TextStyle(
-                                          color: Colors.white70,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                      Text(
-                                        formatCurrency.format(totalExpense),
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
+                                  const Text(
+                                    'Зарлага',
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 14,
+                                    ),
                                   ),
                                 ],
                               ),
-                            ),
-                          ],
+                              const SizedBox(height: 8),
+                              Text(
+                                formatCurrency.format(totalExpense),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),

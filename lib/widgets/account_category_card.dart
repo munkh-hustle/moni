@@ -22,9 +22,6 @@ class AccountCategoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Get category color based on category name or use account color
-    Color categoryColor = account.color;
-
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -130,7 +127,6 @@ class AccountCategoryCard extends StatelessWidget {
                 const SizedBox(height: 20),
 
                 // PROMINENT CATEGORY DISPLAY
-                // Large category badge that really stands out
                 if (account.category != null) ...[
                   Container(
                     width: double.infinity,
@@ -182,64 +178,22 @@ class AccountCategoryCard extends StatelessWidget {
                   const SizedBox(height: 20),
                 ],
 
-                // Another alternative with category as a large chip
-                if (account.category != null) ...[
-                  Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 0,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-
-                // Balance and stats row
+                // Income and Expense row (BALANCE REMOVED)
                 Row(
                   children: [
-                    // Balance
-                    Expanded(
-                      flex: 2,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Үлдэгдэл',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.7),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            formatCurrency.format(balance),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
                     // Income
                     Expanded(
                       child: _buildStatColumn(
                         'Орлого',
                         formatCurrency.format(income),
-                        Colors.green,
                       ),
                     ),
-
+                    const SizedBox(width: 16),
                     // Expense
                     Expanded(
                       child: _buildStatColumn(
                         'Зарлага',
                         formatCurrency.format(expense),
-                        Colors.red,
                       ),
                     ),
                   ],
@@ -252,7 +206,7 @@ class AccountCategoryCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStatColumn(String label, String amount, Color color) {
+  Widget _buildStatColumn(String label, String amount) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -260,24 +214,17 @@ class AccountCategoryCard extends StatelessWidget {
           label,
           style: TextStyle(
             color: Colors.white.withOpacity(0.7),
-            fontSize: 11,
+            fontSize: 12,
             fontWeight: FontWeight.w500,
           ),
         ),
         const SizedBox(height: 4),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(
-            amount,
-            style: TextStyle(
-              color: color,
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-            ),
+        Text(
+          amount,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
           ),
         ),
       ],
