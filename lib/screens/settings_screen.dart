@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:csv/csv.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:provider/provider.dart';
 import 'dart:convert';
@@ -42,12 +43,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _isImporting = false;
 
   @override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Тохиргоо')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          // CSV Import Section
           const Text(
             'CSV ИМПОРТ',
             style: TextStyle(
@@ -70,7 +73,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Colors.deepPurple,
             () => _importCSV('golomt'),
           ),
+
           const SizedBox(height: 24),
+
+          // CSV Export Section
           const Text(
             'CSV ЭКСПОРТ',
             style: TextStyle(
@@ -81,7 +87,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 8),
           _buildExportCard(),
+
           const SizedBox(height: 24),
+
+          // NEW: Account Category Import/Export Section
+          _buildAccountExportImportCard(),
+
+          const SizedBox(height: 24),
+
+          // Info Section
           const Text(
             'МЭДЭЭЛЭЛ',
             style: TextStyle(
@@ -115,10 +129,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     context,
                   ).accounts.length.toString(),
                 ),
+                const Divider(height: 1, indent: 16),
+                _buildInfoTile(
+                  Icons.category_rounded,
+                  'Категоритай данс',
+                  Provider.of<AccountProvider>(
+                    context,
+                  ).accounts.where((a) => a.isDefined).length.toString(),
+                ),
               ],
             ),
           ),
+
           const SizedBox(height: 24),
+
+          // Clear Data Section
           Card(
             child: ListTile(
               leading: const Icon(
@@ -130,6 +155,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onTap: _showClearDataDialog,
             ),
           ),
+
           if (_isImporting)
             Padding(
               padding: const EdgeInsets.all(16),
@@ -254,9 +280,144 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Widget _buildAccountExportImportCard() {
+    return Card(
+      child: Column(
+        children: [
+          const Padding(
+            padding: EdgeInsets.all(16),
+            child: Text(
+              'ДАНСНЫ КАТЕГОРИ',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Colors.deepPurple,
+              ),
+            ),
+          ),
+          const Divider(height: 1),
+          _buildAccountExportTile(
+            'Категоритай данс экспортлох',
+            Icons.upload_file_rounded,
+            Colors.deepPurple,
+            () => _exportDefinedAccounts(),
+          ),
+          const Divider(height: 1, indent: 16),
+          _buildAccountExportTile(
+            'Категоритай данс импортлох',
+            Icons.download_rounded,
+            Colors.green,
+            () => _importDefinedAccounts(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAccountExportTile(
+    String title,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
+    return ListTile(
+      leading: Icon(icon, color: color),
+      title: Text(title),
+      trailing: const Icon(Icons.arrow_forward_rounded),
+      onTap: onTap,
+    );
+  }
+
   String _getDatabaseSize() {
     // Simulated database size
     return '1.2';
+  }
+
+  Future<void> _exportDefinedAccounts() async {
+    try {
+      final accountProvider = Provider.of<AccountProvider>(
+        context,
+        listen: false,
+      );
+
+      final jsonData = await accountProvider.exportDefinedAccounts();
+
+      if (jsonData.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Экспортлох категоритай данс байхгүй'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      // Save to file
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File(
+        '${directory.path}/assigned_accounts_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.json',
+      );
+      await file.writeAsString(jsonData);
+
+      // Share the file
+      await Share.shareXFiles([
+        XFile(file.path),
+      ], text: 'Категоритай дансны жагсаалт');
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Амжилттай экспортлов'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Экспортлоход алдаа гарлаа: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _importDefinedAccounts() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+      );
+
+      if (result != null) {
+        setState(() => _isImporting = true);
+
+        final file = File(result.files.single.path!);
+        final content = await file.readAsString();
+
+        final accountProvider = Provider.of<AccountProvider>(
+          context,
+          listen: false,
+        );
+
+        await accountProvider.importDefinedAccounts(content);
+
+        setState(() => _isImporting = false);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Категоритай данс амжилттай импортлов'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() => _isImporting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Импортлоход алдаа гарлаа: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   Future<void> _importCSV(String bankType) async {

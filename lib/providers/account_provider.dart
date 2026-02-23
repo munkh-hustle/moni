@@ -1,4 +1,6 @@
 // lib/providers/account_provider.dart
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import '../models/account.dart';
 import '../models/category.dart';
@@ -57,6 +59,70 @@ class AccountProvider extends ChangeNotifier {
   Future<void> deleteCategory(int id) async {
     await DatabaseHelper.instance.deleteCategory(id);
     await loadCategories();
+  }
+
+  Future<String> exportDefinedAccounts() async {
+    final definedAccounts = _accounts.where((a) => a.isDefined).toList();
+
+    if (definedAccounts.isEmpty) {
+      return '';
+    }
+
+    // Create a list of maps with only the essential data
+    final List<Map<String, dynamic>> exportData = definedAccounts.map((
+      account,
+    ) {
+      return {
+        'accountNumber': account.accountNumber,
+        'name': account.name,
+        'color': account.color.value,
+        'category': account.category,
+        'description': account.description,
+      };
+    }).toList();
+
+    // Convert to JSON
+    return jsonEncode(exportData);
+  }
+
+  Future<void> importDefinedAccounts(String jsonData) async {
+    try {
+      final List<dynamic> importedData = jsonDecode(jsonData);
+
+      for (var data in importedData) {
+        final accountNumber = data['accountNumber'];
+        final existingAccount = getAccountByNumber(accountNumber);
+
+        if (existingAccount != null) {
+          // Update existing account with imported data
+          final updatedAccount = Account(
+            accountNumber: accountNumber,
+            name: data['name'] ?? existingAccount.name,
+            color: Color(data['color'] ?? existingAccount.color.value),
+            category: data['category'],
+            description: data['description'],
+            isDefined: true,
+          );
+          await updateAccount(updatedAccount);
+        } else {
+          // Create new account if it doesn't exist
+          final newAccount = Account(
+            accountNumber: accountNumber,
+            name: data['name'] ?? 'Импортлосон данс',
+            color: Color(data['color'] ?? Colors.deepPurple.value),
+            category: data['category'],
+            description: data['description'],
+            isDefined: true,
+          );
+          await addAccount(newAccount);
+        }
+      }
+
+      await loadAccounts();
+    } catch (e) {
+      print('Error importing accounts: $e');
+      rethrow;
+    }
   }
 
   Account? getAccountByNumber(String accountNumber) {
