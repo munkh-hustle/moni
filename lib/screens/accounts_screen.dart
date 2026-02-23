@@ -215,12 +215,23 @@ class UndefinedAccountsTab extends StatelessWidget {
   void _showDefineAccountDialog(BuildContext context, Account account) {
     final nameController = TextEditingController(text: account.name);
     Color selectedColor = account.color;
-    String? selectedCategory = account.category;
 
+    // Get categories from provider
     final categoryProvider = Provider.of<AccountProvider>(
       context,
       listen: false,
     );
+
+    // Check if the current category still exists
+    String? selectedCategory = account.category;
+    if (selectedCategory != null) {
+      final categoryExists = categoryProvider.categories.any(
+        (c) => c.name == selectedCategory,
+      );
+      if (!categoryExists) {
+        selectedCategory = null;
+      }
+    }
 
     showDialog(
       context: context,
@@ -336,12 +347,24 @@ class UndefinedAccountsTab extends StatelessWidget {
   void _showEditAccountDialog(BuildContext context, Account account) {
     final nameController = TextEditingController(text: account.name);
     Color selectedColor = account.color;
-    String? selectedCategory = account.category;
 
+    // Get categories from provider
     final categoryProvider = Provider.of<AccountProvider>(
       context,
       listen: false,
     );
+
+    // Check if the current category still exists
+    String? selectedCategory = account.category;
+    if (selectedCategory != null) {
+      // Verify the category still exists in the list
+      final categoryExists = categoryProvider.categories.any(
+        (c) => c.name == selectedCategory,
+      );
+      if (!categoryExists) {
+        selectedCategory = null; // Reset to null if category no longer exists
+      }
+    }
 
     showDialog(
       context: context,
