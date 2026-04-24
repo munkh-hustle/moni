@@ -40,7 +40,7 @@ class AnalysisScreen extends StatelessWidget {
                   const SizedBox(height: 24),
                   
                   // Monthly Spending Trends
-                  _buildSectionTitle('Сарын зарлагын тренд'),
+                  _buildSectionTitle('Сарын зарлагын тренд,'),
                   const SizedBox(height: 12),
                   _buildMonthlyTrendChart(transactions),
                   const SizedBox(height: 24),
