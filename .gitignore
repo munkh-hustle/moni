@@ -1,41 +1,44 @@
-```
-# Dependencies
-.dart_tool/
-.packages
-.pub/
-
-# Build outputs
-build/
-*.apk
-*.aab
-*.app
+# Compiled and build artifacts
+*.pyc
+__pycache__/
+*.o
+*.obj
+*.class
 *.exe
 *.dll
 *.so
-*.dylib
+*.a
+*.out
 
-# Environment
+# Dependencies
+node_modules/
+venv/
+.venv/
 .env
 .env.local
 .env.*
-!.env.example
 
-# Logs
+# Build directories
+dist/
+build/
+target/
 *.log
-
-# OS generated files
-.DS_Store
-Thumbs.db
-
-# IDE files
-.vscode/
-.idea/
+*.tmp
 *.swp
 *.swo
-*.tmp
+
+# Editors
+.vscode/
+.idea/
 
 # Coverage
 coverage/
 htmlcov/
 .coverage
-```
+
+# Caches
+.mypy_cache/
+.pytest_cache/
+.gradle/
+.julia/
+zig*/

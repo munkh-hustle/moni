@@ -189,7 +189,7 @@ class AnalysisScreen extends StatelessWidget {
               gridData: FlGridData(
                 show: true,
                 drawVerticalLine: false,
-                horizontalInterval: _calculateGridInterval(monthlyExpenses.values),
+                horizontalInterval: _calculateGridInterval(monthlyExpenses.values.toList()),
                 getDrawingHorizontalLine: (value) {
                   return FlLine(
                     color: Colors.grey[700],
@@ -315,6 +315,9 @@ class AnalysisScreen extends StatelessWidget {
       Colors.teal, Colors.indigo, Colors.brown, Colors.grey,
     ];
 
+    final sortedCategories = categoryExpenses.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -328,12 +331,13 @@ class AnalysisScreen extends StatelessWidget {
                   PieChartData(
                     sectionsSpace: 2,
                     centerSpaceRadius: 40,
-                    sections: categoryExpenses.entries.toList().asMap().entries.map((e) {
+                    sections: sortedCategories.asMap().entries.map((e) {
                       final index = e.key % colors.length;
-                      final percentage = (e.value / total * 100);
+                      final category = e.value;
+                      final percentage = (category.value / total * 100);
                       return PieChartSectionData(
                         color: colors[index],
-                        value: e.value,
+                        value: category.value,
                         title: '${percentage.toStringAsFixed(0)}%',
                         radius: 60,
                         titleStyle: const TextStyle(
@@ -351,9 +355,9 @@ class AnalysisScreen extends StatelessWidget {
               flex: 2,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: categoryExpenses.entries.toList().asMap().entries.take(5).map((e) {
-                  final index = e.key % colors.length;
-                  final percentage = (e.value / total * 100);
+                children: sortedCategories.take(5).map((category) {
+                  final index = sortedCategories.indexOf(category) % colors.length;
+                  final percentage = (category.value / total * 100);
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     child: Row(
@@ -369,7 +373,7 @@ class AnalysisScreen extends StatelessWidget {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            e.key,
+                            category.key,
                             style: const TextStyle(fontSize: 12, color: Colors.white),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -484,7 +488,7 @@ class AnalysisScreen extends StatelessWidget {
               gridData: FlGridData(
                 show: true,
                 drawVerticalLine: false,
-                horizontalInterval: _calculateGridInterval(categoryExpenses.values),
+                horizontalInterval: _calculateGridInterval(topCategories.map((e) => e.value).toList()),
                 getDrawingHorizontalLine: (value) {
                   return FlLine(
                     color: Colors.grey[700],
@@ -494,12 +498,14 @@ class AnalysisScreen extends StatelessWidget {
               ),
               borderData: FlBorderData(show: false),
               barGroups: topCategories.asMap().entries.map((e) {
+                final index = e.key;
+                final category = e.value;
                 return BarChartGroupData(
-                  x: e.key,
+                  x: index,
                   barRods: [
                     BarChartRodData(
-                      toY: e.value.value,
-                      color: colors[e.key % colors.length],
+                      toY: category.value,
+                      color: colors[index % colors.length],
                       width: 30,
                       borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(6),
@@ -581,7 +587,7 @@ class AnalysisScreen extends StatelessWidget {
     );
   }
 
-  double _calculateGridInterval(Iterable<double> values) {
+  double _calculateGridInterval(List<double> values) {
     if (values.isEmpty) return 1000;
     final max = values.reduce((a, b) => a > b ? a : b);
     if (max == 0) return 1000;
@@ -590,10 +596,10 @@ class AnalysisScreen extends StatelessWidget {
     final magnitude = (math.log(max) / math.ln10).floor();
     final normalized = max / math.pow(10, magnitude);
     
-    if (normalized <= 1) return math.pow(10, magnitude);
-    if (normalized <= 2) return 2 * math.pow(10, magnitude);
-    if (normalized <= 5) return 5 * math.pow(10, magnitude);
-    return math.pow(10, magnitude + 1);
+    if (normalized <= 1) return math.pow(10, magnitude).toDouble();
+    if (normalized <= 2) return (2 * math.pow(10, magnitude)).toDouble();
+    if (normalized <= 5) return (5 * math.pow(10, magnitude)).toDouble();
+    return math.pow(10, magnitude + 1).toDouble();
   }
 
   String _formatCompactNumber(double value) {
