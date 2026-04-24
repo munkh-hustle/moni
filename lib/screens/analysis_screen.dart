@@ -127,13 +127,16 @@ class AnalysisScreen extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(icon, color: color, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[400],
+                Icon(icon, color: color, size: 18),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey[400],
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
