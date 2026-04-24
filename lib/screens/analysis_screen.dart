@@ -609,8 +609,10 @@ class AnalysisScreen extends StatelessWidget {
     if (value >= 1000000) {
       return '${(value / 1000000).toStringAsFixed(1)}M';
     } else if (value >= 1000) {
-      return NumberFormat.currency(locale: 'mn_MN', symbol: '', decimalDigits: 0, groupingSeparator: ',').format(value / 1000);
+      final formatted = NumberFormat.currency(locale: 'mn_MN', symbol: '', decimalDigits: 0).format(value / 1000);
+      return formatted;
     }
-    return NumberFormat.currency(locale: 'mn_MN', symbol: '', decimalDigits: 0, groupingSeparator: ',').format(value);
+    final formatted = NumberFormat.currency(locale: 'mn_MN', symbol: '', decimalDigits: 0).format(value);
+    return formatted;
   }
 }
