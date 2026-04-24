@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import '../providers/account_provider.dart';
+import '../providers/transaction_provider.dart';
 import '../models/account.dart';
 import '../models/category.dart';
 
@@ -28,8 +29,10 @@ class CategoriesTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AccountProvider>(
-      builder: (context, provider, child) {
+    return Consumer2<AccountProvider, TransactionProvider>(
+      builder: (context, accountProvider, transactionProvider, child) {
+        final categoryTotals = transactionProvider.getCategoryTotals();
+        
         return Column(
           children: [
             Padding(
@@ -46,9 +49,11 @@ class CategoriesTab extends StatelessWidget {
             Expanded(
               child: ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: provider.categories.length,
+                itemCount: accountProvider.categories.length,
                 itemBuilder: (context, index) {
-                  final category = provider.categories[index];
+                  final category = accountProvider.categories[index];
+                  final totalSpent = categoryTotals[category.name] ?? 0;
+                  
                   return Card(
                     margin: const EdgeInsets.only(bottom: 8),
                     child: ListTile(
@@ -61,7 +66,7 @@ class CategoriesTab extends StatelessWidget {
                       ),
                       title: Text(category.name),
                       subtitle: Text(
-                        'Төсөв: ${NumberFormat.currency(locale: 'mn_MN', symbol: '₮').format(category.budget)}',
+                        'Зарлага: ${NumberFormat.currency(locale: 'mn_MN', symbol: '₮', decimalDigits: 0).format(totalSpent)}',
                       ),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,

@@ -19,6 +19,7 @@ dependencies:
   flutter_colorpicker: ^1.1.0
   share_plus: ^7.2.0
   permission_handler: ^11.3.0
+  fl_chart: ^0.69.0
 
 dev_dependencies:
   flutter_test:
