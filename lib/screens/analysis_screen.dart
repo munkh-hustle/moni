@@ -40,7 +40,7 @@ class AnalysisScreen extends StatelessWidget {
                   const SizedBox(height: 24),
                   
                   // Monthly Spending Trends
-                  _buildSectionTitle('Сарын зарлагын тренд,'),
+                  _buildSectionTitle('Сарын зарлагын тренд'),
                   const SizedBox(height: 12),
                   _buildMonthlyTrendChart(transactions),
                   const SizedBox(height: 24),
@@ -609,8 +609,8 @@ class AnalysisScreen extends StatelessWidget {
     if (value >= 1000000) {
       return '${(value / 1000000).toStringAsFixed(1)}M';
     } else if (value >= 1000) {
-      return NumberFormat.currency(locale: 'mn_MN', symbol: '', decimalDigits: 0).format(value / 1000);
+      return NumberFormat.currency(locale: 'mn_MN', symbol: '', decimalDigits: 0, groupingSeparator: ',').format(value / 1000);
     }
-    return NumberFormat.currency(locale: 'mn_MN', symbol: '', decimalDigits: 0).format(value);
+    return NumberFormat.currency(locale: 'mn_MN', symbol: '', decimalDigits: 0, groupingSeparator: ',').format(value);
   }
 }
