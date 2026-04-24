@@ -6,6 +6,7 @@ import 'providers/transaction_provider.dart';
 import 'providers/account_provider.dart';
 import 'screens/home_screen.dart';
 import 'screens/accounts_screen.dart';
+import 'screens/analysis_screen.dart';
 import 'screens/settings_screen.dart';
 import 'database/database_helper.dart';
 
@@ -102,6 +103,7 @@ class _MainScreenState extends State<MainScreen> {
   
   final List<Widget> _screens = const [
     HomeScreen(),
+    AnalysisScreen(),
     AccountsScreen(),
     SettingsScreen(),
   ];
@@ -117,6 +119,10 @@ class _MainScreenState extends State<MainScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.home_rounded),
             label: 'Нүүр',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.analytics_rounded),
+            label: 'ANALYSIS',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.account_balance_rounded),
