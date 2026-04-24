@@ -2,14 +2,140 @@
 import 'package:flutter/material.dart';
 import 'package:moni/models/account.dart';
 import 'package:moni/models/transaction.dart';
+import 'package:moni/models/category.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/transaction_provider.dart';
 import '../providers/account_provider.dart';
 import '../widgets/account_category_card.dart';
+import '../database/database_helper.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  void _showDefineAccountDialog(BuildContext context, Account account) {
+    final nameController = TextEditingController(text: account.name);
+    Color selectedColor = account.color;
+
+    // Get categories from provider
+    final accountProvider = Provider.of<AccountProvider>(
+      context,
+      listen: false,
+    );
+
+    // Check if the current category still exists
+    String? selectedCategory = account.category;
+    if (selectedCategory != null) {
+      final categoryExists = accountProvider.categories.any(
+        (c) => c.name == selectedCategory,
+      );
+      if (!categoryExists) {
+        selectedCategory = null;
+      }
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Данс тодорхойлох'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Дансны нэр',
+                    hintText: 'Жишээ: Цалингийн данс',
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Категори сонгох',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade700),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: selectedCategory,
+                      hint: const Text('Категори сонгох'),
+                      isExpanded: true,
+                      items: [
+                        const DropdownMenuItem(
+                          value: null,
+                          child: Text('Категоригүй'),
+                        ),
+                        ...accountProvider.categories.map((category) {
+                          return DropdownMenuItem(
+                            value: category.name,
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 16,
+                                  height: 16,
+                                  decoration: BoxDecoration(
+                                    color: category.color,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(category.name),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          selectedCategory = value;
+                        });
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Цуцлах'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final updatedAccount = Account(
+                  accountNumber: account.accountNumber,
+                  name: nameController.text,
+                  color: account.color, // Keep original color, not editable
+                  isDefined: true,
+                  category: selectedCategory,
+                );
+                await Provider.of<AccountProvider>(
+                  context,
+                  listen: false,
+                ).updateAccount(updatedAccount);
+                if (context.mounted) Navigator.pop(context);
+              },
+              child: const Text('Хадгалах'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -118,6 +244,10 @@ class HomeScreen extends StatelessWidget {
                           income: totals['income'] ?? 0,
                           expense: totals['expense'] ?? 0,
                           formatCurrency: formatCurrency,
+                          categories: accountProvider.categories,
+                          onDefineAccount: () {
+                            _showDefineAccountDialog(context, account);
+                          },
                         ),
                       );
                     },
