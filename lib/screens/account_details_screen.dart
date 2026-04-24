@@ -1,6 +1,7 @@
 // lib/screens/account_details_screen.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:moni/models/category.dart';
 import 'package:provider/provider.dart';
 import '../models/account.dart';
 import '../models/transaction.dart';
@@ -16,9 +17,24 @@ class AccountDetailsScreen extends StatelessWidget {
     required this.account,
   });
 
+  Color _getAccountColor(BuildContext context) {
+    final accountProvider = Provider.of<AccountProvider>(context, listen: false);
+    
+    // If account has a category, find the category and return its color
+    if (account.category != null) {
+      final category = accountProvider.categories
+          .firstWhere((c) => c.name == account.category, orElse: () => Category(name: '', color: Colors.grey));
+      return category.color;
+    }
+    
+    // If no category, return grey color for unassigned accounts
+    return Colors.grey[800]!;
+  }
+
   @override
   Widget build(BuildContext context) {
     final formatCurrency = NumberFormat.currency(locale: 'mn_MN', symbol: '₮');
+    final accountColor = _getAccountColor(context);
     
     return Scaffold(
       body: CustomScrollView(
@@ -28,7 +44,7 @@ class AccountDetailsScreen extends StatelessWidget {
             expandedHeight: 150,
             floating: false,
             pinned: true,
-            backgroundColor: account.color,
+            backgroundColor: accountColor,
             flexibleSpace: FlexibleSpaceBar(
               titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
               title: Column(
@@ -82,8 +98,8 @@ class AccountDetailsScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      account.color.withOpacity(0.8),
-                      account.color,
+                      accountColor.withOpacity(0.8),
+                      accountColor,
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -134,8 +150,8 @@ class AccountDetailsScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          account.color.withOpacity(0.8),
-                          account.color,
+                          accountColor.withOpacity(0.8),
+                          accountColor,
                         ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
@@ -143,7 +159,7 @@ class AccountDetailsScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: account.color.withOpacity(0.3),
+                          color: accountColor.withOpacity(0.3),
                           blurRadius: 20,
                           offset: const Offset(0, 10),
                         ),
