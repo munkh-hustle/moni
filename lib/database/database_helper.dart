@@ -75,7 +75,7 @@ class DatabaseHelper {
       description TEXT,
       color INTEGER NOT NULL,
       isDefined INTEGER DEFAULT 0,
-      category TEXT  // Add this line
+      category TEXT
     )
   ''');
 

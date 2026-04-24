@@ -43,7 +43,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _isImporting = false;
 
   @override
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Тохиргоо')),
