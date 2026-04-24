@@ -149,4 +149,16 @@ class TransactionProvider extends ChangeNotifier {
 
     return {'expense': totalExpense, 'income': totalIncome};
   }
+
+  // Get total spent per category
+  Map<String, double> getCategoryTotals() {
+    Map<String, double> categoryTotals = {};
+    
+    for (var t in _transactions) {
+      final category = t.category ?? 'Тодорхойгүй';
+      categoryTotals[category] = (categoryTotals[category] ?? 0) + t.expense;
+    }
+    
+    return categoryTotals;
+  }
 }
