@@ -43,6 +43,15 @@ class AccountProvider extends ChangeNotifier {
 
   Future<void> updateAccount(Account account) async {
     await DatabaseHelper.instance.updateAccount(account);
+    
+    // Also update all transactions for this account with the new category
+    if (account.isDefined && account.category != null) {
+      await DatabaseHelper.instance.updateTransactionsCategory(
+        account.accountNumber,
+        account.category!,
+      );
+    }
+    
     await loadAccounts();
   }
 
