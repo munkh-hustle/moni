@@ -31,19 +31,29 @@ class DatabaseHelper {
     );
   }
 
+  // Helper method to check if a column exists in a table
+  Future<bool> _columnExists(Database db, String tableName, String columnName) async {
+    final result = await db.rawQuery('PRAGMA table_info($tableName)');
+    return result.any((row) => row['name'] == columnName);
+  }
+
   // Add this method for handling database upgrades
   Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       // Add cleanedDescription column to transactions table
-      await db.execute(
-        'ALTER TABLE transactions ADD COLUMN cleanedDescription TEXT',
-      );
+      if (!await _columnExists(db, 'transactions', 'cleanedDescription')) {
+        await db.execute(
+          'ALTER TABLE transactions ADD COLUMN cleanedDescription TEXT',
+        );
+      }
     }
 
     // Add this for version 3
     if (oldVersion < 3) {
       // Add category column to accounts table
-      await db.execute('ALTER TABLE accounts ADD COLUMN category TEXT');
+      if (!await _columnExists(db, 'accounts', 'category')) {
+        await db.execute('ALTER TABLE accounts ADD COLUMN category TEXT');
+      }
     }
   }
 
