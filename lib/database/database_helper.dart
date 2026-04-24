@@ -240,6 +240,20 @@ class DatabaseHelper {
     return await db.delete('categories', where: 'id = ?', whereArgs: [id]);
   }
 
+  // Update all transactions for a specific account with a new category
+  Future<int> updateTransactionsCategory(
+    String accountNumber,
+    String category,
+  ) async {
+    final db = await instance.database;
+    return await db.update(
+      'transactions',
+      {'category': category},
+      where: 'accountNumber = ?',
+      whereArgs: [accountNumber],
+    );
+  }
+
   Future<void> close() async {
     final db = await instance.database;
     db.close();
