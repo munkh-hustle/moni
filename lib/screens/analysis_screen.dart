@@ -143,7 +143,7 @@ class AnalysisScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              NumberFormat.currency(locale: 'mn_MN', symbol: '₮', decimalDigits: 0).format(amount),
+              _formatCompactCurrency(amount),
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -156,19 +156,40 @@ class AnalysisScreen extends StatelessWidget {
     );
   }
 
+  String _formatCompactCurrency(double value) {
+    if (value >= 1000000) {
+      // Format millions as "X.X сая ₮"
+      final millions = value / 1000000;
+      return '${millions.toStringAsFixed(1)}сая ₮';
+    } else {
+      // Use thousands separator for smaller amounts
+      final formatted = NumberFormat('#,###', 'mn_MN').format(value);
+      return '$formatted ₮';
+    }
+  }
+
   Widget _buildMonthlyTrendChart(List<Transaction> transactions) {
-    // Group transactions by month
-    Map<String, double> monthlyExpenses = {};
-    Map<String, double> monthlyIncome = {};
+    // Group transactions by week within each month
+    // Week 1: days 1-7, Week 2: days 8-14, Week 3: days 15-21, Week 4: days 22-28, Week 5: days 29+
+    Map<String, Map<int, double>> weeklyExpenses = {};
+    Map<String, Map<int, double>> weeklyIncome = {};
     
     for (var t in transactions) {
       final monthKey = DateFormat('yyyy-MM').format(t.date);
-      monthlyExpenses[monthKey] = (monthlyExpenses[monthKey] ?? 0) + t.expense;
-      monthlyIncome[monthKey] = (monthlyIncome[monthKey] ?? 0) + t.income;
+      final day = t.date.day;
+      final weekNumber = ((day - 1) ~/ 7) + 1; // Week 1: 1-7, Week 2: 8-14, etc.
+      
+      if (!weeklyExpenses.containsKey(monthKey)) {
+        weeklyExpenses[monthKey] = {};
+        weeklyIncome[monthKey] = {};
+      }
+      
+      weeklyExpenses[monthKey]![weekNumber] = (weeklyExpenses[monthKey]![weekNumber] ?? 0) + t.expense;
+      weeklyIncome[monthKey]![weekNumber] = (weeklyIncome[monthKey]![weekNumber] ?? 0) + t.income;
     }
 
-    // Sort by month and get last 6 months
-    final sortedMonths = monthlyExpenses.keys.toList()..sort();
+    // Sort months and get last 6 months
+    final sortedMonths = weeklyExpenses.keys.toList()..sort();
     final recentMonths = sortedMonths.length > 6 
         ? sortedMonths.sublist(sortedMonths.length - 6) 
         : sortedMonths;
@@ -182,6 +203,33 @@ class AnalysisScreen extends StatelessWidget {
       );
     }
 
+    // Build spots for each week across all months
+    List<FlSpot> expenseSpots = [];
+    List<FlSpot> incomeSpots = [];
+    List<String> weekLabels = [];
+    int spotIndex = 0;
+
+    for (final month in recentMonths) {
+      final weeks = weeklyExpenses[month]!.keys.toList()..sort();
+      for (final week in weeks) {
+        expenseSpots.add(FlSpot(spotIndex.toDouble(), weeklyExpenses[month]![week] ?? 0));
+        incomeSpots.add(FlSpot(spotIndex.toDouble(), weeklyIncome[month]![week] ?? 0));
+        weekLabels.add('$month\n${_getWeekLabel(week)}');
+        spotIndex++;
+      }
+    }
+
+    if (expenseSpots.isEmpty) {
+      return const Card(
+        child: Padding(
+          padding: EdgeInsets.all(32),
+          child: Center(child: Text('Өгөгдөл байхгүй')),
+        ),
+      );
+    }
+
+    final maxExpense = expenseSpots.map((e) => e.y).reduce((a, b) => a > b ? a : b);
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -192,7 +240,7 @@ class AnalysisScreen extends StatelessWidget {
               gridData: FlGridData(
                 show: true,
                 drawVerticalLine: false,
-                horizontalInterval: _calculateGridInterval(monthlyExpenses.values.toList()),
+                horizontalInterval: _calculateGridInterval(expenseSpots.map((e) => e.y).toList()),
                 getDrawingHorizontalLine: (value) {
                   return FlLine(
                     color: Colors.grey[700],
@@ -220,12 +268,12 @@ class AnalysisScreen extends StatelessWidget {
                     interval: 1,
                     getTitlesWidget: (value, meta) {
                       final index = value.toInt();
-                      if (index >= recentMonths.length) return const Text('');
-                      final month = recentMonths[index];
-                      final parts = month.split('-');
+                      if (index >= weekLabels.length) return const Text('');
+                      final label = weekLabels[index];
                       return Text(
-                        '${parts[1]}-${parts[0].substring(2)}',
-                        style: TextStyle(color: Colors.grey[400], fontSize: 10),
+                        label,
+                        style: TextStyle(color: Colors.grey[400], fontSize: 9),
+                        textAlign: TextAlign.center,
                       );
                     },
                   ),
@@ -235,17 +283,12 @@ class AnalysisScreen extends StatelessWidget {
               ),
               borderData: FlBorderData(show: false),
               minX: 0,
-              maxX: (recentMonths.length - 1).toDouble(),
+              maxX: (expenseSpots.length - 1).toDouble(),
               minY: 0,
-              maxY: monthlyExpenses.values.reduce((a, b) => a > b ? a : b) * 1.2,
+              maxY: maxExpense * 1.2,
               lineBarsData: [
                 LineChartBarData(
-                  spots: recentMonths.asMap().entries.map((e) {
-                    return FlSpot(
-                      e.key.toDouble(),
-                      monthlyExpenses[e.value] ?? 0,
-                    );
-                  }).toList(),
+                  spots: expenseSpots,
                   isCurved: true,
                   color: Colors.red,
                   barWidth: 3,
@@ -263,12 +306,7 @@ class AnalysisScreen extends StatelessWidget {
                   ),
                 ),
                 LineChartBarData(
-                  spots: recentMonths.asMap().entries.map((e) {
-                    return FlSpot(
-                      e.key.toDouble(),
-                      monthlyIncome[e.value] ?? 0,
-                    );
-                  }).toList(),
+                  spots: incomeSpots,
                   isCurved: true,
                   color: Colors.green,
                   barWidth: 3,
@@ -291,6 +329,23 @@ class AnalysisScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _getWeekLabel(int weekNumber) {
+    switch (weekNumber) {
+      case 1:
+        return '1-р долоо';
+      case 2:
+        return '2-р долоо';
+      case 3:
+        return '3-р долоо';
+      case 4:
+        return '4-р долоо';
+      case 5:
+        return '5-р долоо';
+      default:
+        return '$weekNumber-р долоо';
+    }
   }
 
   Widget _buildCategoryPieChart(List<Transaction> transactions) {
@@ -439,7 +494,7 @@ class AnalysisScreen extends StatelessWidget {
                 touchTooltipData: BarTouchTooltipData(
                   getTooltipItem: (group, groupIndex, rod, rodIndex) {
                     return BarTooltipItem(
-                      NumberFormat.currency(locale: 'mn_MN', symbol: '₮', decimalDigits: 0).format(rod.toY),
+                      _formatCompactCurrency(rod.toY),
                       const TextStyle(color: Colors.white),
                     );
                   },
@@ -577,7 +632,7 @@ class AnalysisScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              NumberFormat.currency(locale: 'mn_MN', symbol: '₮', decimalDigits: 0).format(amount),
+              _formatCompactCurrency(amount),
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -607,12 +662,18 @@ class AnalysisScreen extends StatelessWidget {
 
   String _formatCompactNumber(double value) {
     if (value >= 1000000) {
-      return '${(value / 1000000).toStringAsFixed(1)}M';
+      // Format millions as "X.X сая" or compact "XM"
+      final millions = value / 1000000;
+      return '${millions.toStringAsFixed(1)}с'; // 'с' for сая (million in Mongolian)
+    } else if (value >= 100000) {
+      // For large numbers, use thousands separator without decimals
+      final formatted = NumberFormat('#,###', 'mn_MN').format(value);
+      return formatted;
     } else if (value >= 1000) {
-      final formatted = NumberFormat.currency(locale: 'mn_MN', symbol: '', decimalDigits: 0).format(value / 1000);
+      final formatted = NumberFormat('#,###', 'mn_MN').format(value);
       return formatted;
     }
-    final formatted = NumberFormat.currency(locale: 'mn_MN', symbol: '', decimalDigits: 0).format(value);
+    final formatted = NumberFormat('#,###', 'mn_MN').format(value);
     return formatted;
   }
 }
