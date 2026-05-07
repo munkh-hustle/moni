@@ -175,53 +175,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return '1.2';
   }
 
-  Future<void> _exportDefinedAccounts() async {
-    try {
-      final accountProvider = Provider.of<AccountProvider>(
-        context,
-        listen: false,
-      );
-
-      final jsonData = await accountProvider.exportDefinedAccounts();
-
-      if (jsonData.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Экспортлох категоритай данс байхгүй'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-        return;
-      }
-
-      // Save to file
-      final directory = await getApplicationDocumentsDirectory();
-      final file = File(
-        '${directory.path}/assigned_accounts_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.json',
-      );
-      await file.writeAsString(jsonData);
-
-      // Share the file
-      await Share.shareXFiles([
-        XFile(file.path),
-      ], text: 'Категоритай дансны жагсаалт');
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Амжилттай экспортлов'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Экспортлоход алдаа гарлаа: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
   Future<void> _loadDemoData() async {
     try {
       setState(() => _isImporting = true);
@@ -281,104 +234,53 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  Future<void> _importDefinedAccounts() async {
-    try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['json'],
-      );
-
-      if (result != null) {
-        setState(() => _isImporting = true);
-
-        final file = File(result.files.single.path!);
-        final content = await file.readAsString();
-
-        final accountProvider = Provider.of<AccountProvider>(
-          context,
-          listen: false,
-        );
-
-        await accountProvider.importDefinedAccounts(content);
-
-        setState(() => _isImporting = false);
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Категоритай данс амжилттай импортлов'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      setState(() => _isImporting = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Импортлоход алдаа гарлаа: $e'),
-          backgroundColor: Colors.red,
+  void _showClearDataDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Бүх өгөгдөл устгах'),
+        content: const Text(
+          'Энэ үйлдэл нь бүх гүйлгээ, данс, категориудыг устгах болно. Та үүнийг буцаах боломжгүй.',
         ),
-      );
-    }
-  }
-
-  Future<void> _importCSV(String bankType) async {
-    try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['csv'],
-      );
-
-      if (result != null) {
-        setState(() => _isImporting = true);
-
-        final file = File(result.files.single.path!);
-        final content = await file.readAsString();
-        final List<List<dynamic>> csvData = const CsvToListConverter().convert(
-          content,
-        );
-
-        if (bankType == 'khan') {
-          await _parseKhanBankCSV(csvData);
-        } else if (bankType == 'golomt') {
-          await _parseGolomtBankCSV(csvData);
-        }
-
-        // Refresh data
-        await Provider.of<TransactionProvider>(
-          context,
-          listen: false,
-        ).loadTransactions();
-        await Provider.of<AccountProvider>(
-          context,
-          listen: false,
-        ).loadAccounts();
-
-        if (mounted) {
-          setState(() => _isImporting = false);
-
-          // Show detailed summary
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Амжилттай импортлов: $_importedCount шинэ, $_skippedCount давхардсан',
-              ),
-              backgroundColor: _skippedCount > 0 ? Colors.orange : Colors.green,
-              duration: const Duration(seconds: 4),
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isImporting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Алдаа гарлаа: $e'),
-            backgroundColor: Colors.red,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Цуцлах'),
           ),
-        );
-      }
-    }
+          ElevatedButton(
+            onPressed: () async {
+              // Clear database
+              final db = await DatabaseHelper.instance.database;
+              await db.delete('transactions');
+              await db.delete('accounts');
+              await db.delete('categories');
+
+              // Refresh providers
+              await Provider.of<TransactionProvider>(
+                context,
+                listen: false,
+              ).loadTransactions();
+              await Provider.of<AccountProvider>(
+                context,
+                listen: false,
+              ).loadAccounts();
+
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Өгөгдөл амжилттай устгагдлаа'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Устгах'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _parseKhanBankCSV(List<List<dynamic>> csvData) async {
@@ -428,7 +330,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           final trfMatch = trfPattern.firstMatch(description);
 
           if (trfMatch != null) {
-            // Extract the part after TRF=...-...-
+            // Extract the part after TRF=...-...-\
             accountNumber = trfMatch.group(1)?.trim() ?? description;
           } else {
             // Use cleaned description as account number
@@ -510,277 +412,5 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
 
     print('Import complete: $_importedCount imported, $_skippedCount skipped');
-  }
-
-  Future<void> _parseGolomtBankCSV(List<List<dynamic>> csvData) async {
-    _importedCount = 0;
-    _skippedCount = 0;
-
-    // Get existing transactions to check for duplicates
-    final existingTransactions = await DatabaseHelper.instance
-        .getAllTransactions();
-
-    // Find the start of transaction data
-    int startRow = 0;
-    String? accountNumberFromHeader;
-
-    for (int i = 0; i < csvData.length; i++) {
-      if (csvData[i].isNotEmpty) {
-        // Try to extract account number from header
-        if (csvData[i][0].toString().contains('Данс')) {
-          final headerText = csvData[i][0].toString();
-          final accountMatch = RegExp(r'Данс:\s*(\d+)').firstMatch(headerText);
-          if (accountMatch != null) {
-            accountNumberFromHeader = accountMatch.group(1);
-          }
-        }
-
-        if (csvData[i][0] == 'Гүйлгээний огноо') {
-          startRow = i + 1;
-          break;
-        }
-      }
-    }
-
-    for (int i = startRow; i < csvData.length; i++) {
-      final row = csvData[i];
-      if (row.length < 7 || row[0].toString().isEmpty) continue;
-
-      try {
-        final date = DateFormat('yyyy-MM-dd HH:mm:ss').parse(row[0].toString());
-
-        // Determine account number
-        String accountNumber;
-        String? counterpartyAccount;
-
-        if (accountNumberFromHeader != null) {
-          accountNumber = accountNumberFromHeader;
-        } else {
-          if (row.length > 6 && row[6].toString().isNotEmpty) {
-            counterpartyAccount = row[6].toString();
-            accountNumber = counterpartyAccount;
-          } else {
-            // Use description as account number if no counterparty
-            final description = row[5].toString();
-            accountNumber = description.isNotEmpty
-                ? description.substring(
-                    0,
-                    description.length > 50 ? 50 : description.length,
-                  )
-                : 'GOLOMT_UNKNOWN';
-          }
-        }
-
-        final beginningBalance = double.tryParse(row[1].toString()) ?? 0;
-        final expense = double.tryParse(row[2].toString()) ?? 0;
-        final income = double.tryParse(row[3].toString()) ?? 0;
-        final endingBalance = double.tryParse(row[4].toString()) ?? 0;
-        final description = row[5].toString();
-
-        if (counterpartyAccount == null && row.length > 6) {
-          counterpartyAccount = row[6].toString();
-        }
-
-        final cleanedDescription = Provider.of<TransactionProvider>(
-          context,
-          listen: false,
-        ).getCleanDescription(description);
-
-        // Create transaction object to check for duplicate
-        final transaction = Transaction(
-          date: date,
-          beginningBalance: beginningBalance,
-          expense: expense,
-          income: income,
-          endingBalance: endingBalance,
-          description: description,
-          cleanedDescription: cleanedDescription,
-          counterpartyAccount: counterpartyAccount,
-          accountNumber: accountNumber,
-          bankType: 'golomt',
-        );
-
-        // Check for duplicate
-        if (_isDuplicateTransaction(transaction, existingTransactions)) {
-          _skippedCount++;
-          print('Skipped duplicate transaction: $date - $description');
-          continue;
-        }
-
-        // Check if account exists, if not create it
-        final accountProvider = Provider.of<AccountProvider>(
-          context,
-          listen: false,
-        );
-
-        var account = accountProvider.getAccountByNumber(accountNumber);
-        if (account == null) {
-          String accountName;
-          if (accountNumberFromHeader != null) {
-            accountName = 'Голомт Банк - $accountNumberFromHeader';
-          } else if (counterpartyAccount != null) {
-            accountName = 'Голомт - $counterpartyAccount';
-          } else {
-            // For description-based accounts, create a shorter name
-            final nameParts = accountNumber.split(RegExp(r'[>\s]+'));
-            if (nameParts.length > 1) {
-              accountName = 'Голомт - ${nameParts.take(2).join(' ')}';
-            } else {
-              accountName =
-                  'Голомт - ${accountNumber.substring(0, accountNumber.length > 15 ? 15 : accountNumber.length)}';
-            }
-          }
-
-          account = Account(
-            accountNumber: accountNumber,
-            name: accountName,
-            color: Colors.primaries[Random().nextInt(Colors.primaries.length)],
-            isDefined: false,
-          );
-          await accountProvider.addAccount(account);
-        }
-
-        await DatabaseHelper.instance.insertTransaction(transaction);
-        _importedCount++;
-      } catch (e) {
-        print('Error parsing row: $e');
-      }
-    }
-
-    print('Import complete: $_importedCount imported, $_skippedCount skipped');
-  }
-
-  Future<void> _exportCSV(String bankType) async {
-    try {
-      final transactions = Provider.of<TransactionProvider>(
-        context,
-        listen: false,
-      ).transactions.where((t) => t.bankType == bankType).toList();
-
-      if (transactions.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Экспортлох өгөгдөл байхгүй'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-        return;
-      }
-
-      List<List<dynamic>> rows = [];
-
-      if (bankType == 'khan') {
-        rows.add([
-          'Гүйлгээний огноо',
-          'Эхний үлдэгдэл',
-          'Зарлага',
-          'Орлого',
-          'Эцсийн үлдэгдэл',
-          'Гүйлгээний утга',
-          'Харьцсан данс',
-        ]);
-        for (var t in transactions) {
-          rows.add([
-            DateFormat('yyyy-MM-dd HH:mm:ss').format(t.date),
-            t.beginningBalance.toStringAsFixed(2),
-            t.expense.toStringAsFixed(2),
-            t.income.toStringAsFixed(2),
-            t.endingBalance.toStringAsFixed(2),
-            t.description,
-            t.counterpartyAccount ?? '',
-          ]);
-        }
-      } else {
-        rows.add([
-          'Гүйлгээний огноо',
-          'Салбар',
-          'Эхний үлдэгдэл',
-          'Дебит гүйлгээ',
-          'Кредит гүйлгээ',
-          'Эцсийн үлдэгдэл',
-          'Гүйлгээний утга',
-          'Харьцсан данс',
-        ]);
-        for (var t in transactions) {
-          rows.add([
-            DateFormat('yyyy-MM-dd HH:mm:ss').format(t.date),
-            '',
-            t.beginningBalance.toStringAsFixed(2),
-            t.expense.toStringAsFixed(2),
-            t.income.toStringAsFixed(2),
-            t.endingBalance.toStringAsFixed(2),
-            t.description,
-            t.counterpartyAccount ?? '',
-          ]);
-        }
-      }
-
-      String csv = const ListToCsvConverter().convert(rows);
-
-      // Save to temporary file and share
-      final directory = await Directory.systemTemp;
-      final file = File(
-        '${directory.path}/bank_statement_${bankType}_${DateTime.now().millisecondsSinceEpoch}.csv',
-      );
-      await file.writeAsString(csv);
-
-      await Share.shareXFiles([XFile(file.path)], text: 'Банкны хуулга');
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Алдаа гарлаа: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
-  void _showClearDataDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Бүх өгөгдөл устгах'),
-        content: const Text(
-          'Энэ үйлдэл нь бүх гүйлгээ, данс, категориудыг устгах болно. Та үүнийг буцаах боломжгүй.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Цуцлах'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              // Clear database
-              final db = await DatabaseHelper.instance.database;
-              await db.delete('transactions');
-              await db.delete('accounts');
-              await db.delete('categories');
-
-              // Refresh providers
-              await Provider.of<TransactionProvider>(
-                context,
-                listen: false,
-              ).loadTransactions();
-              await Provider.of<AccountProvider>(
-                context,
-                listen: false,
-              ).loadAccounts();
-
-              if (context.mounted) {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Өгөгдөл амжилттай устгагдлаа'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Устгах'),
-          ),
-        ],
-      ),
-    );
   }
 }
