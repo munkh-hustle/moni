@@ -122,7 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   accountNumber: account.accountNumber,
                   name: nameController.text,
                   color: account.color, // Keep original color, not editable
-                  isDefined: true,
+                  isDefined: selectedCategory != null,
                   category: selectedCategory,
                 );
                 await Provider.of<AccountProvider>(

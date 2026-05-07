@@ -1,34 +1,69 @@
 ```
-# Dependencies
-.dart_tool/
-.packages
-
-# Build outputs
+# Build artifacts
 build/
+*.apk
+*.aab
+*.app
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Dependencies
+**/node_modules/
+**/.pub-cache/
+**/.dart_tool/
 
 # Logs
 *.log
+**/logs/
 
 # Environment variables
 .env
 .env.local
-*.env.*
+.env.*
+!.env.example
 
-# IDE files
+# OS generated files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Icon?
+.directory
+.Trashes
+*.swp
+*.swo
+
+# Testing
+coverage/
+*.gcov
+*.lcov
+
+# IDE specific
 .idea/
 .vscode/
 *.swp
 *.swo
 
-# OS generated files
+# Temporary files
+*.tmp
+*~
 .DS_Store
 Thumbs.db
 
-# Coverage
-coverage/
-htmlcov/
-.coverage
-
-# Temporary files
-*.tmp
+# Flutter specific
+.dart_tool/
+.packages
+.pub/
+flutter_export_environment.sh
+**/android/**/gradle-wrapper.properties
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/Flutter/.symlinks/
+**/ios/build/
+**/windows/Flutter/ephemeral/
+**/windows/Flutter/flutter_windows.dll
+**/linux/Flutter/ephemeral/
+**/macos/Flutter/ephemeral/
+**/macos/Flutter/GeneratedPluginRegistrant.swift
 ```

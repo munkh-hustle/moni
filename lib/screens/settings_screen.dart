@@ -400,6 +400,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             description: 'Хаан банкны данс',
             color: Colors.primaries[Random().nextInt(Colors.primaries.length)],
             isDefined: false,
+            category: null,
           );
           await accountProvider.addAccount(account);
         }
