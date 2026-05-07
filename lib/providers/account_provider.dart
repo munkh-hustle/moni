@@ -110,7 +110,7 @@ class AccountProvider extends ChangeNotifier {
             color: Color(data['color'] ?? existingAccount.color.value),
             category: data['category'],
             description: data['description'],
-            isDefined: true,
+            isDefined: data['category'] != null,
           );
           await updateAccount(updatedAccount);
         } else {
@@ -121,7 +121,7 @@ class AccountProvider extends ChangeNotifier {
             color: Color(data['color'] ?? Colors.deepPurple.value),
             category: data['category'],
             description: data['description'],
-            isDefined: true,
+            isDefined: data['category'] != null,
           );
           await addAccount(newAccount);
         }

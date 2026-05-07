@@ -400,9 +400,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
             description: 'Хаан банкны данс',
             color: Colors.primaries[Random().nextInt(Colors.primaries.length)],
             isDefined: false,
+            category: null,
           );
           await accountProvider.addAccount(account);
         }
+
+        // Create transaction with category from account if available
+        final transaction = Transaction(
+          date: date,
+          beginningBalance: beginningBalance,
+          expense: expense,
+          income: income,
+          endingBalance: endingBalance,
+          description: description,
+          cleanedDescription: cleanedDescription,
+          counterpartyAccount: counterpartyAccount,
+          accountNumber: accountNumber,
+          bankType: 'khan',
+          category: account.category,
+          isDefined: account.isDefined && account.category != null,
+        );
 
         await DatabaseHelper.instance.insertTransaction(transaction);
         _importedCount++;
