@@ -35,13 +35,18 @@ class AccountCategoryCard extends StatelessWidget {
     
     if (isAssigned && account.category != null) {
       // Find the category in the list by matching the category name (trimmed and case-insensitive)
+      final String trimmedAccountCategory = account.category!.trim().toLowerCase();
       final category = categories.firstWhere(
-        (c) => c.name.trim().toLowerCase() == account.category!.trim().toLowerCase(),
+        (c) => c.name.trim().toLowerCase() == trimmedAccountCategory,
         orElse: () => Category(name: '', color: Colors.grey[800]!),
       );
       // Only use the category color if we found a valid category
       if (category.name.isNotEmpty) {
         cardColor = category.color;
+      } else {
+        // Debug: No matching category found
+        print('No matching category found for: "${account.category}" (trimmed: "$trimmedAccountCategory")');
+        print('Available categories: ${categories.map((c) => '"${c.name}"').join(", ")}');
       }
     }
 

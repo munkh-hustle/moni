@@ -22,10 +22,10 @@ class DatabaseHelper {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
 
-    // Increment version to 3
+    // Version 4: Fixed category names with trailing spaces to match JSON import data
     return await openDatabase(
       path,
-      version: 3, // Changed from 2 to 3
+      version: 4,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -50,13 +50,12 @@ class DatabaseHelper {
 
     // Add this for version 3
     if (oldVersion < 3) {
-      // Add category column to accounts table
+      // Add category column to accounts table if it doesn't exist
       if (!await _columnExists(db, 'accounts', 'category')) {
         await db.execute('ALTER TABLE accounts ADD COLUMN category TEXT');
       }
       
-      // Insert additional default categories that match the demo data
-      // These categories use trimmed names without trailing spaces
+      // Insert additional default categories that match the demo data (version 3 - without trailing spaces)
       await db.insert(
         'categories',
         Category(name: 'амин-эрдэнэ', color: Color(0xFF6BCB77), budget: 0).toMap(),
@@ -89,7 +88,19 @@ class DatabaseHelper {
         'categories',
         Category(name: 'хувцас', color: Color(0xFFFF6B6B), budget: 0).toMap(),
       );
-      // Note: 'Хоол', 'Дэлгүүр', 'Эрүүл мэнд' are already inserted in _createDB
+    }
+    
+    // Version 4 upgrade - add categories with trailing spaces to match JSON import data
+    if (oldVersion < 4) {
+      // Insert categories with trailing spaces using raw SQL to avoid UNIQUE constraint issues
+      await db.rawInsert(
+        "INSERT OR IGNORE INTO categories (name, color, budget) VALUES (?, ?, ?)",
+        ['авлага ', Color(0xFF5D9B9B).value, 0],
+      );
+      await db.rawInsert(
+        "INSERT OR IGNORE INTO categories (name, color, budget) VALUES (?, ?, ?)",
+        ['банк шимтгэл ', Color(0xFF9D65C9).value, 0],
+      );
     }
   }
 
