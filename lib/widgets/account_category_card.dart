@@ -31,15 +31,15 @@ class AccountCategoryCard extends StatelessWidget {
     final bool isAssigned = account.isDefined && account.category != null;
     
     // Get the category color if assigned, otherwise use grey
-    Color cardColor;
-    if (isAssigned) {
+    Color cardColor = Colors.grey[800]!; // Default color
+    
+    if (isAssigned && account.category != null) {
+      // Find the category in the list
       final category = categories.firstWhere(
         (c) => c.name == account.category,
-        orElse: () => Category(name: '', color: Colors.grey),
+        orElse: () => Category(name: account.category!, color: Colors.purple), // Default to purple if not found
       );
       cardColor = category.color;
-    } else {
-      cardColor = Colors.grey[800]!;
     }
 
     return Dismissible(

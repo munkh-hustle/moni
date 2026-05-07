@@ -1,133 +1,47 @@
+```
 # Dependencies
-.pub/
-.buildlog
-.flutter-plugins
-.flutter-plugin-dependencies
+.dart_tool/
 .packages
+.pub-cache/
+pubspec.lock
 
-# Generated plugin build files
-.config/
+# Build outputs
+build/
+*.apk
+*.aab
+*.app
+*.exe
+*.dll
+*.so
+*.dylib
 
-# Coverage
-coverage/
-
-# Temporary files
-*.tmp
-*.temp
+# Logs
 *.log
+**/logs
 
-# Environment
+# Environment variables
 .env
 .env.local
-*.env.*
+.env.*
 
-# IDE
+# IDE files
 .idea/
 .vscode/
 *.swp
 *.swo
 
-# Build outputs
-build/
-dist/
-target/
-
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-env/
-venv/
-.venv/
-.venv.bak/
-pip-log.txt
-pip-delete-this-directory.txt
-.tox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.log
-*.pot
-*.pyc
-*.pyo
-*.pyd
-.MF
-.pytest_cache/
-.mypy_cache/
-.hypothesis/
+# OS generated files
 .DS_Store
 Thumbs.db
 
-# Node.js
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.snyk
-.npm
-.npmrc
-package-lock.json
-yarn.lock
-.pnp.*
-.pnp.js
+# Coverage
+coverage/
+*.coverage
 
-# Java
-*.class
-*.jar
-*.war
-*.ear
-*.nar
-hs_err_pid*
-replay_pid*
-
-# C/C++
-*.o
-*.a
-*.so
-*.dll
-*.exe
-*.out
-*.dylib
-*.obj
-*.ilk
-*.pdb
-*.gch
-*.ii
-*.vi
-*.scc
-
-# Ruby
-*.gem
-*.rbc
-.bundle/
-.jruby_cache/
-.rakeopts
-.rbx/
-
-# Go
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-*.test
-*.prof
-*.out
-vendor/
-
-# Rust
-target/
-Cargo.lock
-
-# Compression
+# Compressed files
 *.zip
-*.tar
 *.gz
+*.tar
 *.tgz
 *.bz2
 *.xz
@@ -147,113 +61,4 @@ Cargo.lock
 *.tar.bz2
 *.tar.xz
 *.tar.zst
-
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-desktop.ini
-*.nib
-*.lproj
-*/.DS_Store
-*/._*
-*.Spotlight-V100
-*.Trashes
-*.fseventsd
-*.DocumentRevisions-V100
-*.com.apple.timemachine.donotpresent
-*.AppleDouble
-*.LSOverride
-Icon?
-*.Hidden
-*.NetworkStore
-*.apdisk
-*.qlog
-*.qrk
-*.webarchive
-*.webarchivexml
-*.mff
-*.dsf
-*.dsi
-*.dtb
-*.dtd
-*.dts
-*.dtsi
-*.dtbo
-*.dtbocfg
-*.dtbosig
-*.dtboverlay
-*.dtbsig
-*.dtc
-*.fdt
-*.ovpn
-*.ovpnconf
-*.ovpncert
-*.ovpnkey
-*.ovpnca
-*.ovpnclient
-*.ovpnserver
-*.ovpnhmac
-*.ovpntls
-*.ovpnauth
-*.ovpncred
-*.ovpncrl
-*.ovpndh
-*.ovpnextra
-*.ovpnhost
-*.ovpnport
-*.ovpnproto
-*.ovpnroute
-*.ovpnscript
-*.ovpnup
-*.ovpndown
-*.ovpnnameserver
-*.ovpnsearchdomain
-*.ovpnmtu
-*.ovpndevice
-*.ovpntun
-*.ovpntap
-*.ovpnkeepalive
-*.ovpnping
-*.ovpnpingexit
-*.ovpnpingrestart
-*.ovpncomp
-*.ovpnnobind
-*.ovpncipher
-*.ovpnauth
-*.ovpncert
-*.ovpnkey
-*.ovpnca
-*.ovpnclient
-*.ovpnserver
-*.ovpnhmac
-*.ovpntls
-*.ovpnauth
-*.ovpncred
-*.ovpncrl
-*.ovpndh
-*.ovpnextra
-*.ovpnhost
-*.ovpnport
-*.ovpnproto
-*.ovpnroute
-*.ovpnscript
-*.ovpnup
-*.ovpndown
-*.ovpnnameserver
-*.ovpnsearchdomain
-*.ovpnmtu
-*.ovpndevice
-*.ovpntun
-*.ovpntap
-*.ovpnkeepalive
-*.ovpnping
-*.ovpnpingexit
-*.ovpnpingrestart
-*.ovpncomp
-*.ovpnnobind
-*.ovpncipher
+```

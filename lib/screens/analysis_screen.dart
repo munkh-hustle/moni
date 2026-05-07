@@ -143,7 +143,7 @@ class AnalysisScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              NumberFormat.currency(locale: 'mn_MN', symbol: '₮', decimalDigits: 0).format(amount),
+              _formatCompactCurrency(amount),
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -154,6 +154,18 @@ class AnalysisScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _formatCompactCurrency(double value) {
+    if (value >= 1000000) {
+      // Format millions as "X.X сая ₮"
+      final millions = value / 1000000;
+      return '${millions.toStringAsFixed(1)}сая ₮';
+    } else {
+      // Use thousands separator for smaller amounts
+      final formatted = NumberFormat('#,###', 'mn_MN').format(value);
+      return '$formatted ₮';
+    }
   }
 
   Widget _buildMonthlyTrendChart(List<Transaction> transactions) {
@@ -482,7 +494,7 @@ class AnalysisScreen extends StatelessWidget {
                 touchTooltipData: BarTouchTooltipData(
                   getTooltipItem: (group, groupIndex, rod, rodIndex) {
                     return BarTooltipItem(
-                      NumberFormat.currency(locale: 'mn_MN', symbol: '₮', decimalDigits: 0).format(rod.toY),
+                      _formatCompactCurrency(rod.toY),
                       const TextStyle(color: Colors.white),
                     );
                   },
@@ -620,7 +632,7 @@ class AnalysisScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              NumberFormat.currency(locale: 'mn_MN', symbol: '₮', decimalDigits: 0).format(amount),
+              _formatCompactCurrency(amount),
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -650,12 +662,18 @@ class AnalysisScreen extends StatelessWidget {
 
   String _formatCompactNumber(double value) {
     if (value >= 1000000) {
-      return '${(value / 1000000).toStringAsFixed(1)}M';
+      // Format millions as "X.X сая" or compact "XM"
+      final millions = value / 1000000;
+      return '${millions.toStringAsFixed(1)}с'; // 'с' for сая (million in Mongolian)
+    } else if (value >= 100000) {
+      // For large numbers, use thousands separator without decimals
+      final formatted = NumberFormat('#,###', 'mn_MN').format(value);
+      return formatted;
     } else if (value >= 1000) {
-      final formatted = NumberFormat.currency(locale: 'mn_MN', symbol: '', decimalDigits: 0).format(value / 1000);
+      final formatted = NumberFormat('#,###', 'mn_MN').format(value);
       return formatted;
     }
-    final formatted = NumberFormat.currency(locale: 'mn_MN', symbol: '', decimalDigits: 0).format(value);
+    final formatted = NumberFormat('#,###', 'mn_MN').format(value);
     return formatted;
   }
 }
