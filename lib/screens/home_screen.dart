@@ -18,6 +18,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  String _sortBy = 'name'; // 'name', 'expense', 'income', 'category'
+
   void _showDefineAccountDialog(BuildContext context, Account account) {
     final nameController = TextEditingController(text: account.name);
     Color selectedColor = account.color;
@@ -145,6 +147,58 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('Санхүүгийн хяналт'),
         actions: [
+          // Sort dropdown
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.sort),
+            tooltip: 'Эрэмбэлэх',
+            onSelected: (value) {
+              setState(() {
+                _sortBy = value;
+              });
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'name',
+                child: Row(
+                  children: [
+                    Icon(Icons.label, size: 20),
+                    SizedBox(width: 8),
+                    Text('Нэрээр'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'expense',
+                child: Row(
+                  children: [
+                    Icon(Icons.trending_down, size: 20),
+                    SizedBox(width: 8),
+                    Text('Зарлагаар'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'income',
+                child: Row(
+                  children: [
+                    Icon(Icons.trending_up, size: 20),
+                    SizedBox(width: 8),
+                    Text('Орлогоор'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'category',
+                child: Row(
+                  children: [
+                    Icon(Icons.category, size: 20),
+                    SizedBox(width: 8),
+                    Text('Категориар'),
+                  ],
+                ),
+              ),
+            ],
+          ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
             onPressed: () {
@@ -207,6 +261,39 @@ class _HomeScreenState extends State<HomeScreen> {
                 (accountTotals[transaction.accountNumber]!['expense'] ?? 0) + transaction.expense;
           }
 
+          // Create a list of accounts with their totals for sorting
+          final List<Map<String, dynamic>> accountsWithTotals = [];
+          for (var account in accountProvider.accounts) {
+            final totals = accountTotals[account.accountNumber] ?? {
+              'income': 0,
+              'expense': 0,
+              'balance': 0,
+            };
+            accountsWithTotals.add({
+              'account': account,
+              'income': totals['income'] ?? 0,
+              'expense': totals['expense'] ?? 0,
+              'balance': totals['balance'] ?? 0,
+            });
+          }
+
+          // Sort accounts based on selected sort option
+          if (_sortBy == 'expense') {
+            accountsWithTotals.sort((a, b) => (b['expense'] as double).compareTo(a['expense'] as double));
+          } else if (_sortBy == 'income') {
+            accountsWithTotals.sort((a, b) => (b['income'] as double).compareTo(a['income'] as double));
+          } else if (_sortBy == 'category') {
+            accountsWithTotals.sort((a, b) {
+              final catA = ((a['account'] as Account).category ?? '').toLowerCase();
+              final catB = ((b['account'] as Account).category ?? '').toLowerCase();
+              return catA.compareTo(catB);
+            });
+          } else {
+            // Default: sort by name
+            accountsWithTotals.sort((a, b) => 
+              ((a['account'] as Account).name).compareTo((b['account'] as Account).name));
+          }
+
           return CustomScrollView(
             slivers: [
               // Account Category Cards Section
@@ -229,20 +316,19 @@ class _HomeScreenState extends State<HomeScreen> {
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
-                      final account = accountProvider.accounts[index];
-                      final totals = accountTotals[account.accountNumber] ?? {
-                        'income': 0,
-                        'expense': 0,
-                        'balance': 0,
-                      };
+                      final accountData = accountsWithTotals[index];
+                      final account = accountData['account'] as Account;
+                      final income = accountData['income'] as double;
+                      final expense = accountData['expense'] as double;
+                      final balance = accountData['balance'] as double;
                       
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: AccountCategoryCard(
                           account: account,
-                          balance: totals['balance'] ?? 0,
-                          income: totals['income'] ?? 0,
-                          expense: totals['expense'] ?? 0,
+                          balance: balance,
+                          income: income,
+                          expense: expense,
                           formatCurrency: formatCurrency,
                           categories: accountProvider.categories,
                           onDefineAccount: () {
@@ -251,7 +337,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       );
                     },
-                    childCount: accountProvider.accounts.length,
+                    childCount: accountsWithTotals.length,
                   ),
                 ),
               ),
