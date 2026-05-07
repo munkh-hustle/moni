@@ -1,69 +1,71 @@
 ```
 # Build artifacts
-build/
-*.apk
-*.aab
-*.app
-*.exe
+*.o
+*.obj
+*.out
 *.dll
 *.so
-*.dylib
+*.a
 
 # Dependencies
 **/node_modules/
-**/.pub-cache/
-**/.dart_tool/
+**/.venv/
+**/venv/
+**/__pycache__/
+**/.mypy_cache/
+**/.pytest_cache/
+**/.gradle/
+**/target/
+**/build/
+**/dist/
 
-# Logs
+# Logs and temp files
 *.log
-**/logs/
+*.tmp
+*.swp
+*.swo
 
-# Environment variables
+# Environment
 .env
 .env.local
 .env.*
-!.env.example
 
-# OS generated files
-.DS_Store
-Thumbs.db
-ehthumbs.db
-Icon?
-.directory
-.Trashes
-*.swp
-*.swo
-
-# Testing
-coverage/
-*.gcov
-*.lcov
-
-# IDE specific
-.idea/
+# Editors
 .vscode/
+.idea/
 *.swp
 *.swo
 
-# Temporary files
-*.tmp
-*~
+# Coverage reports
+coverage/
+htmlcov/
+.coverage
+
+# System files
 .DS_Store
 Thumbs.db
 
-# Flutter specific
-.dart_tool/
-.packages
-.pub/
-flutter_export_environment.sh
-**/android/**/gradle-wrapper.properties
-**/ios/Pods/
-**/ios/.symlinks/
-**/ios/Flutter/.symlinks/
-**/ios/build/
-**/windows/Flutter/ephemeral/
-**/windows/Flutter/flutter_windows.dll
-**/linux/Flutter/ephemeral/
-**/macos/Flutter/ephemeral/
-**/macos/Flutter/GeneratedPluginRegistrant.swift
+# Compressed files
+*.zip
+*.gz
+*.tar
+*.tgz
+*.bz2
+*.xz
+*.7z
+*.rar
+*.zst
+*.lz4
+*.lzh
+*.cab
+*.arj
+*.rpm
+*.deb
+*.Z
+*.lz
+*.lzo
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
 ```

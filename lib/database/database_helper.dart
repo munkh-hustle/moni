@@ -54,6 +54,42 @@ class DatabaseHelper {
       if (!await _columnExists(db, 'accounts', 'category')) {
         await db.execute('ALTER TABLE accounts ADD COLUMN category TEXT');
       }
+      
+      // Insert additional default categories that match the demo data
+      // These categories use trimmed names without trailing spaces
+      await db.insert(
+        'categories',
+        Category(name: 'амин-эрдэнэ', color: Color(0xFF6BCB77), budget: 0).toMap(),
+      );
+      await db.insert(
+        'categories',
+        Category(name: 'мөнх-эрдэнэ', color: Color(0xFFFFD93D), budget: 0).toMap(),
+      );
+      await db.insert(
+        'categories',
+        Category(name: 'батзаяа', color: Color(0xFF4ECDC4), budget: 0).toMap(),
+      );
+      await db.insert(
+        'categories',
+        Category(name: 'авлага', color: Color(0xFF5D9B9B), budget: 0).toMap(),
+      );
+      await db.insert(
+        'categories',
+        Category(name: 'өглөг', color: Color(0xFFFF6B6B), budget: 0).toMap(),
+      );
+      await db.insert(
+        'categories',
+        Category(name: 'банк шимтгэл', color: Color(0xFF9D65C9), budget: 0).toMap(),
+      );
+      await db.insert(
+        'categories',
+        Category(name: 'нөат', color: Color(0xFF4ECDC4), budget: 0).toMap(),
+      );
+      await db.insert(
+        'categories',
+        Category(name: 'хувцас', color: Color(0xFFFF6B6B), budget: 0).toMap(),
+      );
+      // Note: 'Хоол', 'Дэлгүүр', 'Эрүүл мэнд' are already inserted in _createDB
     }
   }
 
