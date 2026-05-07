@@ -1,42 +1,39 @@
 ```
-# Dependencies
-.dart_tool/
-.packages
-.pub-cache/
-pubspec.lock
-
-# Build outputs
-build/
-*.apk
-*.aab
-*.app
+# Build artifacts
+*.class
+*.o
+*.obj
+*.out
 *.exe
 *.dll
 *.so
-*.dylib
+*.a
 
-# Logs
+# Dependencies
+.pub/
+.dart_tool/
+build/
+
+# Logs and temp files
 *.log
-**/logs
+*.tmp
+*.swp
 
-# Environment variables
+# Environment
 .env
 .env.local
-.env.*
+*.env.*
 
-# IDE files
-.idea/
+# Editors
 .vscode/
+.idea/
 *.swp
 *.swo
 
-# OS generated files
-.DS_Store
-Thumbs.db
-
 # Coverage
 coverage/
-*.coverage
+htmlcov/
+.coverage
 
 # Compressed files
 *.zip

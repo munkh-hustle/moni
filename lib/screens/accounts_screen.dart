@@ -32,6 +32,18 @@ class CategoriesTab extends StatelessWidget {
     return Consumer2<AccountProvider, TransactionProvider>(
       builder: (context, accountProvider, transactionProvider, child) {
         final categoryTotals = transactionProvider.getCategoryTotals();
+        final assignedAccounts = accountProvider.accounts.where((a) => a.isDefined).toList();
+        
+        // Group accounts by category
+        Map<String, List<Account>> accountsByCategory = {};
+        for (var account in assignedAccounts) {
+          if (account.category != null && account.category!.isNotEmpty) {
+            if (!accountsByCategory.containsKey(account.category)) {
+              accountsByCategory[account.category!] = [];
+            }
+            accountsByCategory[account.category!]!.add(account);
+          }
+        }
         
         return Column(
           children: [
@@ -47,48 +59,98 @@ class CategoriesTab extends StatelessWidget {
               ),
             ),
             Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: accountProvider.categories.length,
-                itemBuilder: (context, index) {
-                  final category = accountProvider.categories[index];
-                  final totalSpent = categoryTotals[category.name] ?? 0;
-                  
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: category.color,
-                        child: Text(
-                          category.name.substring(0, 1),
-                          style: const TextStyle(color: Colors.white),
-                        ),
+              child: accountsByCategory.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'Одоогоор категоритай данс байхгүй',
+                        style: TextStyle(color: Colors.grey),
                       ),
-                      title: Text(category.name),
-                      subtitle: Text(
-                        'Зарлага: ${NumberFormat.currency(locale: 'mn_MN', symbol: '₮', decimalDigits: 0).format(totalSpent)}',
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.edit_rounded),
-                            onPressed: () =>
-                                _showEditCategoryDialog(context, category),
-                          ),
-                          if (index >
-                              5) // Don't allow deleting default categories
-                            IconButton(
-                              icon: const Icon(Icons.delete_rounded),
-                              onPressed: () =>
-                                  _showDeleteCategoryDialog(context, category),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: accountsByCategory.length,
+                      itemBuilder: (context, categoryIndex) {
+                        final categoryName = accountsByCategory.keys.elementAt(categoryIndex);
+                        final accountsInCategory = accountsByCategory[categoryName]!;
+                        
+                        // Find the category to get its color
+                        final category = accountProvider.categories.firstWhere(
+                          (c) => c.name == categoryName,
+                          orElse: () => Category(name: categoryName, color: Colors.deepPurple),
+                        );
+                        
+                        final totalSpent = categoryTotals[categoryName] ?? 0;
+                        
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Category Header
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              child: Row(
+                                children: [
+                                  CircleAvatar(
+                                    backgroundColor: category.color,
+                                    radius: 18,
+                                    child: Text(
+                                      categoryName.substring(0, 1).toUpperCase(),
+                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          categoryName,
+                                          style: const TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        Text(
+                                          '${accountsInCategory.length} данс | Зарлага: ${NumberFormat.currency(locale: 'mn_MN', symbol: '₮', decimalDigits: 0).format(totalSpent)}',
+                                          style: TextStyle(fontSize: 14, color: Colors.grey[400]),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                        ],
-                      ),
+                            // Accounts in this category
+                            ...accountsInCategory.map((account) {
+                              return Card(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                color: account.color.withOpacity(0.1),
+                                child: ListTile(
+                                  leading: CircleAvatar(
+                                    backgroundColor: account.color,
+                                    child: Text(
+                                      account.name.substring(0, 1).toUpperCase(),
+                                      style: const TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                  title: Text(account.name),
+                                  subtitle: Text(
+                                    account.accountNumber,
+                                    style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                                  ),
+                                  trailing: Icon(
+                                    Icons.circle,
+                                    size: 12,
+                                    color: account.color,
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                            const SizedBox(height: 16),
+                          ],
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
             ),
           ],
         );

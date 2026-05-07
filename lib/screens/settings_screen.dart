@@ -3,14 +3,10 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:csv/csv.dart';
 import 'package:intl/intl.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:provider/provider.dart';
 import 'dart:convert';
-import 'dart:io';
 import '../providers/transaction_provider.dart';
 import '../providers/account_provider.dart';
 import '../models/transaction.dart';
@@ -50,51 +46,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // CSV Import Section
-          const Text(
-            'CSV ИМПОРТ',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey,
-            ),
-          ),
-          const SizedBox(height: 8),
-          _buildImportCard(
-            'Хаан Банк',
-            'icons/khanbank.png',
-            Colors.blue,
-            () => _importCSV('khan'),
-          ),
-          const SizedBox(height: 8),
-          _buildImportCard(
-            'Голомт Банк',
-            'icons/golomt.png',
-            Colors.deepPurple,
-            () => _importCSV('golomt'),
-          ),
-
-          const SizedBox(height: 24),
-
-          // CSV Export Section
-          const Text(
-            'CSV ЭКСПОРТ',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey,
-            ),
-          ),
-          const SizedBox(height: 8),
-          _buildExportCard(),
-
-          const SizedBox(height: 24),
-
-          // NEW: Account Category Import/Export Section
-          _buildAccountExportImportCard(),
-
-          const SizedBox(height: 24),
-
           // Demo Data Load Button
           Card(
             color: Colors.deepPurple.withOpacity(0.1),
@@ -205,97 +156,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildImportCard(
-    String bank,
-    String iconPath,
-    Color color,
-    VoidCallback onTap,
-  ) {
-    return Card(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(15),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.account_balance_rounded,
-                  color: color,
-                  size: 30,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      bank,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'CSV файл сонгох',
-                      style: TextStyle(fontSize: 14, color: Colors.grey[400]),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(Icons.upload_file_rounded, color: color),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildExportCard() {
-    return Card(
-      child: Column(
-        children: [
-          _buildExportTile(
-            'Хаан Банк формат',
-            Icons.download_rounded,
-            Colors.blue,
-            () => _exportCSV('khan'),
-          ),
-          const Divider(height: 1, indent: 16),
-          _buildExportTile(
-            'Голомт Банк формат',
-            Icons.download_rounded,
-            Colors.deepPurple,
-            () => _exportCSV('golomt'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildExportTile(
-    String title,
-    IconData icon,
-    Color color,
-    VoidCallback onTap,
-  ) {
-    return ListTile(
-      leading: Icon(icon, color: color),
-      title: Text(title),
-      trailing: const Icon(Icons.share_rounded),
-      onTap: onTap,
-    );
-  }
-
   Widget _buildInfoTile(IconData icon, String title, String value) {
     return ListTile(
       leading: Icon(icon, color: Colors.deepPurple),
@@ -307,54 +167,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           color: Colors.deepPurple,
         ),
       ),
-    );
-  }
-
-  Widget _buildAccountExportImportCard() {
-    return Card(
-      child: Column(
-        children: [
-          const Padding(
-            padding: EdgeInsets.all(16),
-            child: Text(
-              'ДАНСНЫ КАТЕГОРИ',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Colors.deepPurple,
-              ),
-            ),
-          ),
-          const Divider(height: 1),
-          _buildAccountExportTile(
-            'Категоритай данс экспортлох',
-            Icons.upload_file_rounded,
-            Colors.deepPurple,
-            () => _exportDefinedAccounts(),
-          ),
-          const Divider(height: 1, indent: 16),
-          _buildAccountExportTile(
-            'Категоритай данс импортлох',
-            Icons.download_rounded,
-            Colors.green,
-            () => _importDefinedAccounts(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAccountExportTile(
-    String title,
-    IconData icon,
-    Color color,
-    VoidCallback onTap,
-  ) {
-    return ListTile(
-      leading: Icon(icon, color: color),
-      title: Text(title),
-      trailing: const Icon(Icons.arrow_forward_rounded),
-      onTap: onTap,
     );
   }
 
