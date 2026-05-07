@@ -41,8 +41,8 @@ class AccountCategoryCard extends StatelessWidget {
         );
         cardColor = category.color;
       } catch (e) {
-        // Category not found, use purple as fallback
-        cardColor = Colors.purple;
+        // Category not found, keep default grey color
+        // This can happen if the category was deleted
       }
     }
 

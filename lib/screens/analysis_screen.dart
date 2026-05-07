@@ -229,6 +229,8 @@ class AnalysisScreen extends StatelessWidget {
     }
 
     final maxExpense = expenseSpots.map((e) => e.y).reduce((a, b) => a > b ? a : b);
+    final maxIncome = incomeSpots.isNotEmpty ? incomeSpots.map((e) => e.y).reduce((a, b) => a > b ? a : b) : 0.0;
+    final overallMax = maxExpense > maxIncome ? maxExpense : maxIncome;
 
     return Card(
       child: Padding(
@@ -240,7 +242,7 @@ class AnalysisScreen extends StatelessWidget {
               gridData: FlGridData(
                 show: true,
                 drawVerticalLine: false,
-                horizontalInterval: _calculateGridInterval(expenseSpots.map((e) => e.y).toList()),
+                horizontalInterval: _calculateGridInterval([overallMax]),
                 getDrawingHorizontalLine: (value) {
                   return FlLine(
                     color: Colors.grey[700],
@@ -285,7 +287,7 @@ class AnalysisScreen extends StatelessWidget {
               minX: 0,
               maxX: (expenseSpots.length - 1).toDouble(),
               minY: 0,
-              maxY: maxExpense * 1.2,
+              maxY: overallMax * 1.2,
               lineBarsData: [
                 LineChartBarData(
                   spots: expenseSpots,
@@ -546,7 +548,7 @@ class AnalysisScreen extends StatelessWidget {
               gridData: FlGridData(
                 show: true,
                 drawVerticalLine: false,
-                horizontalInterval: _calculateGridInterval(topCategories.map((e) => e.value).toList()),
+                horizontalInterval: _calculateGridInterval([maxValue]),
                 getDrawingHorizontalLine: (value) {
                   return FlLine(
                     color: Colors.grey[700],
