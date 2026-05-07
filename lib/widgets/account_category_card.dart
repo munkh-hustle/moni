@@ -35,11 +35,15 @@ class AccountCategoryCard extends StatelessWidget {
     
     if (isAssigned && account.category != null) {
       // Find the category in the list
-      final category = categories.firstWhere(
-        (c) => c.name == account.category,
-        orElse: () => Category(name: account.category!, color: Colors.purple), // Default to purple if not found
-      );
-      cardColor = category.color;
+      try {
+        final category = categories.firstWhere(
+          (c) => c.name == account.category,
+        );
+        cardColor = category.color;
+      } catch (e) {
+        // Category not found, use purple as fallback
+        cardColor = Colors.purple;
+      }
     }
 
     return Dismissible(
