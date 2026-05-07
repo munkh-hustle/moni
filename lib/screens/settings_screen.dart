@@ -2,6 +2,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:csv/csv.dart';
 import 'package:intl/intl.dart';
@@ -91,6 +92,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           // NEW: Account Category Import/Export Section
           _buildAccountExportImportCard(),
+
+          const SizedBox(height: 24),
+
+          // Demo Data Load Button
+          Card(
+            color: Colors.deepPurple.withOpacity(0.1),
+            child: Column(
+              children: [
+                const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text(
+                    'DEMO ӨГӨГДӨЛ',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.deepPurple,
+                    ),
+                  ),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.play_arrow_rounded, color: Colors.green),
+                  title: const Text('Demo өгөгдөл ачаалах'),
+                  subtitle: const Text('JSON болон CSV файлыг автоматаар импортлох'),
+                  trailing: const Icon(Icons.arrow_forward_rounded),
+                  onTap: () => _loadDemoData(),
+                ),
+              ],
+            ),
+          ),
 
           const SizedBox(height: 24),
 
@@ -376,6 +407,65 @@ class _SettingsScreenState extends State<SettingsScreen> {
           backgroundColor: Colors.red,
         ),
       );
+    }
+  }
+
+  Future<void> _loadDemoData() async {
+    try {
+      setState(() => _isImporting = true);
+
+      // Load accounts from JSON asset
+      final accountProvider = Provider.of<AccountProvider>(
+        context,
+        listen: false,
+      );
+
+      final jsonString = await rootBundle.loadString(
+        'assets/assigned_accounts_20260507_155802.json',
+      );
+      await accountProvider.importDefinedAccounts(jsonString);
+
+      // Load transactions from CSV asset
+      final csvString = await rootBundle.loadString('assets/2025-10 - Sheet1.csv');
+      final List<List<dynamic>> csvData = const CsvToListConverter().convert(
+        csvString,
+      );
+
+      await _parseKhanBankCSV(csvData);
+
+      // Refresh data
+      await Provider.of<TransactionProvider>(
+        context,
+        listen: false,
+      ).loadTransactions();
+      await Provider.of<AccountProvider>(
+        context,
+        listen: false,
+      ).loadAccounts();
+
+      setState(() => _isImporting = false);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Demo өгөгдөл амжилттай ачаалагдлаа: $_importedCount шинэ, $_skippedCount давхардсан',
+            ),
+            backgroundColor: _skippedCount > 0 ? Colors.orange : Colors.green,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() => _isImporting = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Demo өгөгдөл ачаалахад алдаа гарлаа: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
